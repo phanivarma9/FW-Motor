@@ -1,0 +1,31 @@
+<div *ngIf="isLoading; else content">
+    <div   class="shimmer-container">
+        <!-- Left Side Content Shimmer (70%) -->
+        <div class="left-content-shimmer">
+            <div class="shimmer-element shimmer-payad"></div> <!-- For header shimmer -->
+            <div class="shimmer-element shimmer-garages"></div> <!-- For text shimmer -->
+            <div class=" shimmer-carousel">
+                <div class="shimmer-element shimmer-box"></div>
+                <div class="shimmer-element shimmer-box"></div>
+                <div class="shimmer-element shimmer-box"></div>
+            </div> <!-- For card-like shimmer -->
+            <div class="shimmer-element shimmer-garages"></div>
+            <div class=" shimmer-carousel-small">
+                <div class="shimmer-element shimmer-box-small"></div>
+                <div class="shimmer-element shimmer-box-small"></div>
+                <div class="shimmer-element shimmer-box-small"></div>
+            </div>
+            <div class="shimmer-element shimmer-garages"></div>
+        </div>
+
+        <!-- Right Side Content Shimmer (30%) -->
+        <div class="right-content-shimmer">
+            <div class="shimmer-element shimmer-right"></div> <!-- For header shimmer -->
+
+        </div>
+    </div>
+</div>
+
+<ng-template #content>
+    <ng-content></ng-content> <!-- Actual content goes here when loading is complete -->
+</ng-template>

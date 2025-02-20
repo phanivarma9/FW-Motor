@@ -26,6 +26,11 @@ import { PAYADHIWPopupComponent } from './components/payad-hiw-popup/payad-hiw-p
 import { LeftSidePanelComponent } from './components/left-side-panel/left-side-panel.component';
 import { RightSidePanelComponent } from './components/right-side-panel/right-side-panel.component';
 import { OverlaySidePanelComponent } from './Shared/overlay-side-panel/overlay-side-panel.component';
+import { PageShimmerComponent } from './components/page-shimmer/page-shimmer.component';
+import { GaragesPanelComponent } from './components/garages-panel/garages-panel.component';
+import { PolicyClaimTemplateComponent } from './components/policy-claim-template/policy-claim-template.component';
+import { PolicyWordingTemplateComponent } from './components/policy-wording-template/policy-wording-template.component';
+
 
 @NgModule({
   declarations: [
@@ -49,7 +54,11 @@ import { OverlaySidePanelComponent } from './Shared/overlay-side-panel/overlay-s
     PAYADHIWPopupComponent,
     LeftSidePanelComponent,
     RightSidePanelComponent,
-    OverlaySidePanelComponent
+    OverlaySidePanelComponent,
+    PageShimmerComponent,
+    GaragesPanelComponent,
+    PolicyClaimTemplateComponent,
+    PolicyWordingTemplateComponent
   ],
   imports: [
     BrowserModule,
