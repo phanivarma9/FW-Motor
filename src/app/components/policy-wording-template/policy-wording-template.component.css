@@ -1,0 +1,127 @@
+@import "~font-awesome/css/font-awesome.css";
+.policy-container {
+    max-width: 880px;
+    height: auto;
+    display: flex;
+ 
+    border-radius: 14px;
+    background: #FFFFFF;
+    padding: 15px;
+   flex-direction: column;
+   
+    border: 1px solid #BDBDBD;
+  }
+  .policy-heading{
+    /* color: #EC6625; */
+    font-size: 14px;
+    font-weight: bold;
+    color: black;
+  }
+  .policy-words-links{
+    display: flex;
+    flex-direction: column;
+  }
+  .policy-words-links-align{
+    display: flex;
+    flex-direction: row;
+    color: #EC6625;  
+    font-size: 14px;
+    gap: 40px;
+    text-decoration: underline;
+    margin-top: 3px;
+  }
+
+  .icon-link {
+    text-decoration: none;
+    color: #EC6625;
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+}
+
+.icon-link i {
+    margin-right: 10px;
+    transition: transform 0.3s ease;
+}
+
+.icon-link:hover i {
+    transform: scale(1.2);
+}
+
+.icon-link:hover {
+    color: #2980b9; 
+}
+.policy-icon {
+    display: flex;
+   
+    gap: 7px; 
+}
+
+.policy-icon p {
+    margin: 0; 
+    font-size: 14px; 
+}
+
+.policy-icon i {
+    font-size: 14px; 
+}
+.policy-words-links-align-policy-icons {
+  display: flex;
+  flex-direction: row;  /* Ensures the elements are on the same line */
+  align-items: center;  /* Vertically centers the items */
+  color: #EC6625;
+  font-size: 14px;
+  gap: 3px;  /* Adds a small space between the paragraph and the icon */
+  text-decoration: underline;
+  margin-top: 4px;
+}
+
+.policy-words-links-align-policy-icons p {
+  margin: 0; 
+}
+
+.policy-words-links-align-policy-icons i {
+  font-size: 14px;  
+}
+
+
+
+@media (max-width: 768px) {
+  .policy-container {
+      padding: 15px; 
+  }
+
+  .policy-words-links {
+      flex-direction: column; 
+  }
+
+  .policy-words-links-align {
+      flex-direction: column; 
+      gap: 10px; 
+     
+  }
+  .policy-icon {
+    display: flex;
+   
+    gap: 5px; 
+}
+
+.policy-words-links-align-policy-icons{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: 15px;
+}
+  
+
+  .policy-icon p {
+      font-size: 15px;
+  }
+
+  .policy-heading {
+      font-size: 15px;
+  }
+  .text-dark{
+    display: none;
+  }
+}
