@@ -6,5 +6,7 @@ import { Component } from '@angular/core';
   styleUrls: ['./garages-panel.component.css']
 })
 export class GaragesPanelComponent {
-
+  totalGarages: number = 6200; 
+  city: string = 'Mumbai'; 
+  cityGarages: number = 243; 
 }
