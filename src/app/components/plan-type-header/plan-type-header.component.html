@@ -1,0 +1,47 @@
+<div class="container-full">
+    <div class="row align-items-start header-panel g-0">
+        <!-- Left Column - Policy Type -->
+        <div class="col-md-6">
+            <div class="policy-section">
+                
+                <div class="radio-container">
+                    <p class="policy-label">Policy type:</p>
+                    <div class="radio-group d-flex align-items-center">
+                        <label class="radio">
+                            <input type="radio" name="policy" [(ngModel)]="selectedPolicy" value="comprehensive">
+                            <span>Comprehensive Policy</span>
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="policy" [(ngModel)]="selectedPolicy" value="thirdParty">
+                            <span>Third Party Policy</span>
+                        </label>
+                        <label class="radio">
+                            <a href="#" class="damage-policy" (click)="openPolicyTypePopup()">Want an Own Damage policy?</a>
+                        </label>
+                    </div>
+                    <p class="subtext">
+                        This policy includes Own Damage (OD) + Third Party (TP)  
+                        <a class="knowMore">Know more</a>
+                    </p>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Right Column - Policy Tenure -->
+        <div class="col-md-6">
+            <div class="policy-section">
+                <p class="label">Policy tenure:</p>
+                <div class="d-flex tenure-group">
+                    <label class="option" 
+                        *ngFor="let tenure of tenures" 
+                        [class.selected]="selectedTenure === tenure.value"
+                        (click)="selectTenure(tenure.value)">
+                        <input type="radio" name="tenure" [value]="tenure.value" [(ngModel)]="selectedTenure">
+                        <span>{{ tenure.label }} <span *ngIf="tenure.discount" class="save">{{ tenure.discount }}</span></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

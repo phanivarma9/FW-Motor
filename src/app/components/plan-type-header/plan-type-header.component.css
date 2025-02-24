@@ -1,0 +1,247 @@
+/* Header Panel */
+.container-full {
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+}
+
+.header-panel {
+    height: auto;
+    background: #F5F5F5 !important;
+    overflow: hidden;
+    flex-wrap: wrap;
+    padding: 10px 20px;
+    width: 100%;
+    display: flex;
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+}
+
+.header-panel .col-md-6 {
+    padding: 5px 10px; /* Adjust as needed to reduce gap */
+}
+
+/* Policy Section */
+.policy-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Align items to the start */
+    width: 100%;
+    text-align: left; /* Align text to the left */
+    padding: 5px 0;
+}
+
+
+/* Labels */
+.label {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 5px;
+    width: 100%;
+    text-align: left; /* Ensure label is aligned to the left */
+}
+
+.subtext {
+    font-size: 12px;
+    font-family: Mulish, sans-serif;
+    font-weight: 500px;  /* Adjust as needed */
+    display: block;  /* Forces it to appear below */
+    margin-top: 5px;  /* Adjusts spacing */
+    gap:12px
+}
+.policy-label{
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 5px;
+    width: 100%;
+    text-align: start;
+
+}
+.knowMore {
+    font-size: 12px;
+    font-weight: 700;
+    color: #EC6625 !important;
+    text-decoration: underline;
+}
+
+/* Radio Buttons Group */
+.radio-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 5px;
+    justify-content: flex-start; /* Align items to the start */
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+/* Radio Buttons */
+.radio {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    font-weight: 700;
+
+}
+
+.radio input {
+    accent-color: #e95926 !important;
+    accent-color: #e95926 !important;
+    width: 16px;
+    height: 16px;
+}
+
+/* "Want an Own Damage Policy?" Link */
+.damage-policy {
+    font-size: 12px;
+    font-weight: 700;
+    color: #EC6625 !important;
+    text-decoration: underline;
+    display: flex;
+    align-items: center;
+}
+
+/* Policy Tenure Section */
+.tenure-group {
+    display: flex;
+    gap: 13px;
+    justify-content: flex-start; /* Align tenure options to the start */
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+/* Common styling for tenure options */
+.option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ccc !important;
+    width: 120px; /* Fixed width */
+    height: 43px; /* Fixed height */
+    border-radius: 12px;
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    overflow: visible !important;
+    background: #FFFFFF !important;
+}
+
+/* Hide default radio button */
+.option input {
+    display: none;
+}
+
+/* Circular radio inside option */
+.option::before {
+    content: "";
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #ccc !important;
+    /* outline: 1px solid #ccc; */
+    color: #FFFFFF;
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #FFFFFF;
+    transition: all 0.3s ease;
+}
+
+/* Selected state */
+.option.selected {
+    border: none;
+    background: #FFF2EB !important;
+    color: #e95926 !important;
+}
+
+/* Selected state: tick mark */
+.option.selected::before {
+    background: #e95926 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M20.285 6.708a1 1 0 00-1.57-1.23L9.56 16.33l-4.26-4.276a1 1 0 10-1.42 1.41l5 5a1 1 0 001.43 0l10-10.256z"></path></svg>') no-repeat center;
+    background-size: 16px;
+    border: none;
+}
+
+/* Discount text */
+.option .save {
+    width: 77px;
+    height: 18px;
+    background-color: #F5FDEE;
+    color: #008000; /* Dark green to match the theme */
+    font-family: Mulish, sans-serif;
+    font-weight: 800;
+    font-style: italic;
+    font-size: 10px;
+    line-height: 12.55px;
+    letter-spacing: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    border: 1px solid #008000; /* Green border */
+}
+
+/* Back Button */
+.back-button {
+    width: 34px;  /* Increased size for better visibility */
+    height: 34px;
+    border: 1px solid #EC6625;
+    border-radius: 30px; /* Ensures a perfect circle */
+   background: #FFFFFF;
+    color: #EC6625;
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    outline: none;
+    margin-right: 12px; /* Space between the button and policy selection */
+    padding: 5px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* Optional: Adds a subtle shadow */
+    transition: all 0.2s ease-in-out; /* Smooth hover effect */
+}
+/* .back-button::before {
+    content: "<";
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    justify-content: center;
+    align-items: center;
+} */
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .header-panel {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .policy-section {
+        align-items: center;
+        text-align: center;
+    }
+
+    .radio-group {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .tenure-group {
+        flex-direction: column;
+        align-items: center;
+    }
+}

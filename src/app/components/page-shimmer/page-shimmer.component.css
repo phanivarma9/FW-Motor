@@ -1,0 +1,158 @@
+/* Shimmer container for left and right side */
+.shimmer-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding-left: 60px;
+    padding: 40px;
+    width: 100%;  
+    box-sizing: border-box; 
+}
+
+
+.left-content-shimmer {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.right-content-shimmer {
+    width: 30%;
+    display: flex;
+    flex-direction: column; 
+}
+
+
+.shimmer-element {
+    background: linear-gradient(90deg, #f0f0f0 3%, #e0e0e0 3%);
+    background-size: 300% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+
+.shimmer-payad, .shimmer-garages {
+    height: 100px;
+    max-width: 880px;
+    border-radius: 8px;
+}
+
+.shimmer-carousel {
+    max-width: 880px;
+    height: 460px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.shimmer-carousel-small {
+    max-width: 880px;
+    height: 200px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.shimmer-box, .shimmer-box-small {
+    flex: 1;
+    border-radius: 8px;
+}
+
+
+.shimmer-right {
+    width: 100%;  
+    height: 100vh;  
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 0% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+
+
+/* Small screen (mobile) adjustments */
+@media (max-width: 768px) {
+   
+    .shimmer-container {
+        flex-direction: column;
+        padding-left: 20px;
+    }
+
+    .left-content-shimmer, .right-content-shimmer {
+        width: 100%;
+    }
+
+    .shimmer-payad,
+    .shimmer-garages {
+        max-width: 100%; 
+    }
+
+    .shimmer-carousel, .shimmer-carousel-small {
+        max-width: 100%;
+        flex-direction: column; 
+    }
+
+    .shimmer-box, .shimmer-box-small {
+        width: 100%; 
+    }
+
+    .shimmer-right {
+        height: auto; 
+    }
+}
+
+/* Medium screen (tablet) adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .shimmer-container {
+        padding-left: 30px; 
+    }
+
+    .shimmer-payad,
+    .shimmer-garages {
+        max-width: 100%;
+    }
+
+    .shimmer-carousel, .shimmer-carousel-small {
+        max-width: 100%;
+    }
+
+    .shimmer-box, .shimmer-box-small {
+        width: 100%;
+    }
+
+    .shimmer-right {
+        height: 100%; 
+    }
+}
+
+/* Large screen (desktop) adjustments */
+@media (min-width: 1024px) {
+    .shimmer-container {
+        flex-direction: row; 
+    }
+
+    .left-content-shimmer {
+        width: 70%;
+    }
+
+    .right-content-shimmer {
+        width: 30%; 
+    }
+
+    .shimmer-payad,
+    .shimmer-garages {
+        max-width: 880px;
+    }
+
+    .shimmer-carousel, .shimmer-carousel-small {
+        max-width: 880px; 
+    }
+}
+

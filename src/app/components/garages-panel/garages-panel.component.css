@@ -1,0 +1,245 @@
+.garages-container {
+  display: flex;
+  border-radius: 14px;
+  border: 1px solid #fcdad7;
+  width: 879px;
+  height: 136px;
+  background: linear-gradient(284.4deg, #FCEFED 0.84%, #FFFFFF 23.81%, #FFFFFF 74.37%, #FCDAD7 99.37%);
+}
+
+.garages-heading-container div:first-child {
+  font-family: "Mulish";
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 17.57px;
+  letter-spacing: 0px;
+}
+.garages-heading-container p {
+  font-family: "Mulish";
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 21px;
+  letter-spacing: 0px;
+  margin-top: 5px;
+}
+
+.garages-heading-container span {
+  font-family: "Mulish";
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 21px;
+  letter-spacing: 0px;
+  text-decoration: underline;
+  text-decoration-style: solid;
+  text-decoration-thickness: auto;
+  text-decoration-skip-ink: auto;
+}
+
+.left-side {
+  flex: 1;
+  background-image: linear-gradient(to right -50% -40%, #f5b5b5 -0% -0% -0%);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.vertical-line {
+  width: 1px;
+  background-color: #eca49e;
+  margin: 15px;
+  border: 1px #eca49e;
+}
+
+.house-image {
+  margin: 20px;
+}
+
+.garages-heading-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.garages-heading-container strong {
+  font-size: 14px;
+  margin-bottom: 10px;
+  font-weight: 800;
+  font-family: "Mulish";
+  line-height: 18px;
+  color: #282828;
+}
+.garages-heading-container p {
+  font-size: 12px;
+  font-family: "Mulish";
+  line-height: 21px;
+  font-weight: 600;
+}
+.garages-heading-container span {
+  font-style: solid;
+  text-decoration: underline;
+  color: #ec6625;
+  font-size: 12px;
+  line-height: 21px;
+  font-weight: 700;
+
+  font-family: "Mulish";
+}
+
+.garages-heading-container-button {
+  background-color: none;
+  border: 1px solid #ec6625;
+  background-color: #ffffff;
+  width: 119px;
+  height: 32px;
+  padding-left: 12px;
+  padding-right: 12px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+  font-weight: 700;
+  color: #ec6625;
+  font-family: "Mulish";
+}
+
+.right-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  align-items: center;
+  /* background-image: linear-gradient(to left,  #f5b5b5,rgba(255,255,0,0)); */
+}
+.noted-text {
+  width: 262px;
+  height: 84px;
+}
+
+.noted-text strong {
+  font-weight: 800px;
+  font-size: 14px;
+  font-family: "Mulish";
+  line-height: 18px;
+  color: #282828;
+}
+
+.noted-text p {
+  font-size: 12px;
+  font-weight: 400px;
+  line-height: 21px;
+  font-family: "Mulish";
+}
+
+.policy-words-links {
+  display: flex;
+  flex-direction: row;
+}
+
+/* Media Queries for Responsiveness */
+
+/* Small screens */
+@media (max-width: 768px) {
+  .garages-container {
+    flex-direction: column; /* Stack the left and right sides */
+    width: 100%;
+    border: none;
+    height: auto; /* Adjust height for smaller screens */
+    gap: 10px;
+  }
+
+  .left-side {
+    flex: none;
+    width: 100%;
+    padding: 10px 0;
+    height: 165px;
+    background-color: #edf6ff;
+    border: none;
+    border-radius: 14px;
+  }
+
+  .right-side {
+    background-color: #fff2ed;
+    border: none;
+    border-radius: 14px;
+  }
+
+  .vertical-line {
+    display: none;
+  }
+
+  .house-image {
+    margin: 10px;
+    max-width: 72px; /* Make house image smaller on small screens */
+    height: 58px;
+  }
+
+  .garages-heading-container {
+    height: 117px;
+    width: 215px;
+  }
+  .garages-heading-container strong {
+    font-size: 14px;
+    font-family: "Mulish";
+    font-weight: 800px;
+    line-height: 18px;
+    color: #282828;
+
+    font-family: "Mulish";
+  }
+
+  .garages-heading-container p {
+    font-size: 11px;
+  }
+
+  .garages-heading-container span {
+    font-size: 11px;
+  }
+
+  .noted-text {
+    width: 100%;
+    height: auto;
+    margin-top: 10px;
+  }
+
+  .noted-text strong {
+    font-size: 12px;
+  }
+
+  .noted-text p {
+    font-size: 10px;
+  }
+}
+
+/* Extra small screens (Mobile) */
+@media (max-width: 480px) {
+  .garages-container {
+    padding: 10px; /* Add some padding */
+  }
+
+  .garages-heading-container strong {
+    font-size: 10px;
+  }
+
+  .garages-heading-container p {
+    font-size: 10px;
+  }
+
+  .garages-heading-container span {
+    font-size: 10px;
+  }
+
+  .noted-text {
+    width: 100%;
+    height: auto;
+    padding: 10px;
+  }
+
+  .noted-text strong {
+    font-size: 12px;
+  }
+
+  .noted-text p {
+    font-size: 10px;
+  }
+}
