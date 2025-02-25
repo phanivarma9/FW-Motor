@@ -1,1 +1,36 @@
-<p>cibi-score-popup works!</p>
+<div *ngIf="isPopupVisible" class="popup-overlay" (click)="closePopup()">
+  <div class="popup-content" (click)="$event.stopPropagation()">
+    <div class="heading-popup">
+      <div>
+        <h2>Check the discount you earned for being financially responsible</h2>
+      </div>
+      <div>
+        <button (click)="closePopup()">X</button>
+      </div>
+    </div>
+
+    <!-- Inputs Section -->
+    <form>
+      <div class="input-container">
+        <div class="input-wrapper">
+          <input id="input1" type="text" placeholder="Name as per PAN card" [(ngModel)]="name" name="name"
+            #nameField="ngModel" />
+          <span class="error-message">
+            Enter the name as per PAN card
+          </span>
+        </div>
+
+        <div class="input-wrapper">
+          <input id="input2" type="text" placeholder="Your PAN card no." [(ngModel)]="panCardNumber"
+            name="panCardNumber" #panCardField="ngModel" />
+
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div>
+        <button class="check-discount" type="submit">Check discount</button>
+      </div>
+    </form>
+  </div>
+</div>
