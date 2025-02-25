@@ -1,23 +1,32 @@
 <div class="fw-motor-container">
-    <!-- Fixed Full-Width Header -->
-    <app-plan-type-header class="header-panel"></app-plan-type-header>
+    <!-- 📱 MOBILE VIEW (Only visible on small screens) -->
+    <ng-container *ngIf="isMobile; else webLayout">
+        <app-vehicle-details class="vehicle-section"></app-vehicle-details>
+        <app-plan-type-header class="header-panel"></app-plan-type-header>
+        <app-payad></app-payad>
+        <app-plan-card-summary></app-plan-card-summary>
+        <app-garages-panel></app-garages-panel>
+        <app-policy-wording-template></app-policy-wording-template>
+        <app-policy-claim-template></app-policy-claim-template>
+    </ng-container>
 
-    <!-- Main Content Section (Two-Column Layout) -->
-    <div class="content-container">
-        <!-- Left Side Content (70%) -->
-        <div class="left-content">
-            <app-payad></app-payad>
-            <app-plan-card-summary></app-plan-card-summary>
-            <app-garages-panel></app-garages-panel>
-            <app-policy-wording-template></app-policy-wording-template>
-            <app-policy-claim-template></app-policy-claim-template>
-        </div>
 
-        <!-- Right Side Content (30%) -->
-        <div class="right-content">
-            <app-vehicle-details></app-vehicle-details>
+    <ng-template #webLayout>
+        <app-plan-type-header class="header-panel"></app-plan-type-header>
+
+        <div class="content-container">
+            <div class="left-content">
+                <app-payad></app-payad>
+                <app-plan-card-summary></app-plan-card-summary>
+                <app-garages-panel></app-garages-panel>
+                <app-policy-wording-template></app-policy-wording-template>
+                <app-policy-claim-template></app-policy-claim-template>
+            </div>
+            <div class="right-content">
+                <app-vehicle-details></app-vehicle-details>
+                <app-cibi-score-option></app-cibi-score-option>
+                <app-premium-summary></app-premium-summary>
+            </div>
         </div>
-    </div>
+    </ng-template>
 </div>
-<app-overlay-side-panel></app-overlay-side-panel>
-<app-policy-type-popup></app-policy-type-popup>
