@@ -1,0 +1,23 @@
+<div class="col-slider">
+    <div class="slider-container">
+        <div class="slider-wrapper">
+            <div class="slider-track">
+                <div *ngFor="let value of sliderValues; let i = index" class="breakpoint-wrapper">
+                    <!-- Breakpoints -->
+                    <div class="breakpoint" [ngClass]="{ active: isActive(i) }"></div>
+                    <!-- Bar segments (only if not last) -->
+                    <div *ngIf="i < sliderValues.length - 1" class="bar-segment" [ngClass]="{ active: isActive(i) }">
+                    </div>
+                </div>
+            </div>
+            <input type="range" min="0" [max]="sliderValues.length - 1" step="1" [(ngModel)]="selectedIndex"
+                (input)="snapToBreakpoints($event)" (change)="snapToBreakpoints($event)" />
+        </div>
+        <div class="labels">
+            <div *ngFor="let value of sliderValues; let i = index" class="label item{{i}}">
+                <span [ngClass]="{'selected': selectedIndex == i}">{{ value.km }}</span>
+                <div *ngIf="value.discount" class="discount">Save ₹{{ value.discount }}</div>
+            </div>
+        </div>
+    </div>
+</div>

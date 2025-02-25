@@ -15,7 +15,7 @@ export interface PlanCardConfig {
 }
 
 @Component({
-  selector: 'lib-plans-card-component',
+  selector: 'icici-plans-card-component',
   templateUrl: './plans-card-component.component.html',
   styleUrls: ['./plans-card-component.component.css']
 })

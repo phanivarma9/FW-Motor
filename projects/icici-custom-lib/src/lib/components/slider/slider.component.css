@@ -1,0 +1,145 @@
+/* Slider Section */
+.slider-container {
+    flex-grow: 1;
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    padding: 5px 0;
+  }
+  
+  /* Slider Input */
+  input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%, -50%);
+    z-index: 3;
+    cursor: pointer;
+  }
+  
+  /* Custom Track */
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 5px;
+    background: transparent; /* Hidden track */
+  }
+  
+  /* Custom Thumb (Dragger) */
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 32px;
+    height: 32px;
+    background: #ffffff;
+    border: 1px solid #ec6625;
+    outline: 3px solid #ec6625;
+    border-radius: 50%;
+    cursor: grab;
+    margin-top: -12px;
+    position: relative;
+    z-index: 4;
+    content: "abg";
+    transition: transform 0.1s ease-in-out;
+    background-image: url(../../assets/images/expand_more.png);
+    background-size: 24px 24px; /* Ensures it doesn’t stretch */
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 0.8em;
+    image-rendering: crisp-edges; /* Helps with sharpness */
+    image-rendering: -webkit-optimize-contrast; /* For WebKit browsers */
+  }
+  /* Slider Wrapper */
+  .slider-wrapper {
+    position: relative;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* Slider Track - Discontinuous Bars */
+  .slider-track {
+    position: absolute;
+    width: 100%;
+    display: flex;
+    /* justify-content: space-between; */
+    top: 50%;
+    transform: translate(15px, -2px);
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  /* Breakpoints (small circles) */
+  .breakpoint {
+    width: 8px;
+    height: 8px;
+    border: 4px solid #fff2ed; /* Default: Light grey */
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    transition:
+      background 0.3s,
+      border-color 0.3s;
+  }
+  
+  /* Bar Segments (Discontinuous Bars) */
+  .bar-segment {
+    height: 6px;
+    width: 100px;
+    border-radius: 5px;
+    background: #fff2ed; /* Default: Light grey */
+    margin: 0 8px;
+    transition: background 0.3s;
+  }
+  
+  /* Active State (When Slider is Dragged) */
+  .bar-segment.active {
+    background: #ec6625; /* Orange */
+  }
+  
+  .breakpoint.active {
+    background: #ec6625;
+    border-color: #ec6625;
+  }
+  
+  /* Labels */
+  .labels {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-family: Mulish;
+    /* font-weight: 500; */
+    font-size: 12px;
+  }
+  
+  .label {
+    text-align: center;
+   /*  width: 100px;  */
+  
+  }
+  
+  .label span {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  /* Discount Labels */
+  .discount {
+    color: green;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .label.item0 {
+    position: relative;
+    left: -35px;
+  }
+ 
+  .labels .label .selected {
+    font-weight: 700;
+  }
+  
