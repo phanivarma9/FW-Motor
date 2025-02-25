@@ -1,0 +1,203 @@
+.popup-overlay {
+  position: fixed;
+  top: 0px;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  font-family: 'Mulish';
+  padding: 10px;
+  justify-content: center;
+  backdrop-filter: blur(1px);
+  z-index: 999;
+}
+
+.popup-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  height: 350px;
+  min-height: 300px;
+  /* Allow height to grow */
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-content h2 {
+  font-family: 'Mulish';
+  font-size: 16px;
+  font-weight: bolder;
+  margin-bottom: 20px;
+  /* Add space below the title */
+}
+
+button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  cursor: pointer;
+  border: 1px solid #f1eded;
+  font-weight: bolder;
+  background-color: white;
+  align-items: center;
+  float: right;
+  font-size: larger;
+}
+
+.heading-popup {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-wrapper {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+input {
+  width: 100%;
+  padding: 10px 5px;
+  font-size: 14px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+input:focus {
+  border-color: #EC6625;
+  /* Blue color on focus */
+}
+
+/* Error Message Styles */
+.error-message {
+  color: black;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* Make sure the input field is correctly highlighted when invalid */
+input.ng-invalid.ng-touched {
+  border-color: #EC6625;
+}
+
+
+
+
+
+
+
+.check-discount {
+  background-color: #EC6625;
+  /* Blue color for the button */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  font-size: 14px;
+  width: 180px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  float: right;
+  /* Pushes the button to the right side */
+  margin-top: 20px;
+  /* Adds some space from the top */
+}
+
+.check-discount:hover {
+  background-color: #EC6625;
+  /* Darker blue on hover */
+}
+
+/* Media Queries for Responsive Design */
+
+/* For screens smaller than 768px (tablets) */
+@media (max-width: 768px) {
+  .popup-content {
+    padding: 10px;
+    width: 90%;
+    /* Allow it to take most of the screen width */
+    max-width: none;
+    /* Remove max-width restriction */
+    height: 100px;
+  }
+
+  .popup-content h2 {
+    font-size: 14px;
+    /* Smaller title for mobile */
+  }
+
+  .input-wrapper {
+    margin-bottom: 15px;
+    /* Reduce space between inputs */
+  }
+
+  input {
+    font-size: 12px;
+    /* Smaller font for inputs */
+    padding: 8px 5px;
+    /* Reduced padding */
+  }
+
+  .check-discount {
+    width: 150px;
+    /* Make button smaller */
+    padding: 8px 15px;
+    /* Reduced button padding */
+  }
+
+  button {
+    font-size: 16px;
+    /* Reduce font size for the button */
+  }
+}
+
+/* For screens smaller than 480px (small devices) */
+@media (max-width: 480px) {
+  .popup-content {
+    padding: 10px;
+    width: 95%;
+    /* Almost full width on small devices */
+    max-width: none;
+    height: 100px;
+  }
+
+  .popup-content h2 {
+    font-size: 12px;
+    /* Adjust title size for small screens */
+    margin-bottom: 15px;
+  }
+
+  .input-wrapper {
+    margin-bottom: 10px;
+    /* Tighten space between inputs */
+  }
+
+  input {
+    font-size: 12px;
+    padding: 6px 4px;
+  }
+
+  .check-discount {
+    width: 130px;
+    /* Even smaller button */
+    padding: 7px 12px;
+    font-size: 12px;
+    /* Make button text smaller */
+  }
+
+  button {
+    font-size: 14px;
+    /* Smaller close button */
+  }
+}
