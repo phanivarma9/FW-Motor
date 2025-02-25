@@ -26,7 +26,7 @@ export class PlansCardComponentComponent {
   @Output() customBtn = new EventEmitter<boolean>();
   @Output() additionalBtn = new EventEmitter<boolean>();
   isSelected:any = false;
-  onRadioChange(selectedIndex: any, plan:any): void {
+  onPlanChange(selectedIndex: any, plan:any): void {
     this.data.forEach((selectedPlan:any, index:any) => {
       selectedPlan.selected = index === selectedIndex;
     });

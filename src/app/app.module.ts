@@ -30,7 +30,7 @@ import { PageShimmerComponent } from './components/page-shimmer/page-shimmer.com
 import { GaragesPanelComponent } from './components/garages-panel/garages-panel.component';
 import { PolicyClaimTemplateComponent } from './components/policy-claim-template/policy-claim-template.component';
 import { PolicyWordingTemplateComponent } from './components/policy-wording-template/policy-wording-template.component';
-import { IciciCustomLibModule } from 'icici-custom-lib';
+import { IciciCustomLibModule } from 'projects/icici-custom-lib/src/lib/icici-custom-lib.module'; // Ensure this path is correct
 
 
 @NgModule({

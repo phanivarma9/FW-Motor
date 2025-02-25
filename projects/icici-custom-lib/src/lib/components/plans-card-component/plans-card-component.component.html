@@ -1,56 +1,82 @@
-<div class="plan-card" *ngFor="let plan of data; let i = index"   (click)="onRadioChange(i, plan)"[class.selected]="plan.selected">
-    <!-- Top Section with Background -->
-    <div class="top-section">
-        <div class="plan-identity" (click)="onRadioChange(i, plan)">
-            <div class="header-content">
-                <!-- Title1 & Title2 in Same Row -->
-                <div class="plan-title">
-                    <span class="bold-text" *ngIf="config?.title">{{plan?.title1}},</span>
-                    <span class="regular-text" *ngIf="config?.subtitle">{{plan?.title2}}</span>
-                </div>
-                <!-- Content in the Next Row -->
-                <div class="plan-content-header" *ngIf="config?.desc">
-                    {{plan?.description}}
-                </div>
+<div class="plan-container">
+  <div class="plan-wrapper">
+    <div
+      class="plan-card"
+      *ngFor="let plan of data; let i = index"
+      (click)="onPlanChange(i, plan)"
+      [class.selected]="plan.selected"
+    >
+      <!-- Top Section with Background -->
+      <div class="top-section">
+        <div class="plan-identity">
+          <div class="header-content">
+            <!-- Title1 & Title2 in Same Row -->
+            <div class="plan-title">
+              <span class="bold-text" *ngIf="config?.title"
+                >{{ plan?.title1 }},</span
+              >
+              <span class="regular-text" *ngIf="config?.subtitle">{{
+                plan?.title2
+              }}</span>
+            </div>
+            <!-- Content in the Next Row -->
+            <div class="plan-content-header" *ngIf="config?.desc">
+              {{ plan?.description }}
+            </div>
 
-                <!-- Price in the Next Row -->
-                <div class="plan-price" *ngIf="config?.price">
-                    {{plan?.price }}
-                </div>
+            <!-- Price in the Next Row -->
+            <div class="plan-price" *ngIf="config?.price">
+              {{ plan?.price }}
             </div>
-            <div class="header-action" *ngIf="config?.radioBtn">
-                <input type="radio" [checked]="plan?.selected" class="plan-radio" />
-            </div>
+          </div>
+          <div class="header-action" *ngIf="config?.radioBtn">
+            <input type="radio" [checked]="plan?.selected" class="plan-radio" />
+          </div>
         </div>
         <!-- Recommended Tag -->
-        <div class="recommended-tag" *ngIf="plan?.recommended">
-            Recommended
-        </div>
-    </div>
-    <div class="own-damage-policy" *ngIf="config?.banner">
+        <div class="recommended-tag" *ngIf="plan?.recommended">Recommended</div>
+      </div>
+      <div class="own-damage-policy" *ngIf="config?.banner">
         <p class="policy-text">
-            {{plan?.coverage}}
+          {{ plan?.coverage }}
         </p>
-    </div>
-    <div class="addon-section" *ngIf="config?.addOns">
+      </div>
+      <div class="addon-section" *ngIf="config?.addOns">
         <div class="addon">
-            <div class="addon-title">{{plan?.addonTitle}}</div> <!-- Single title for all addons -->
-            <div class="addon-items">
-                <div class="addon-item" *ngFor="let addOn of plan?.addons">
-                    <div class="addon-tick"></div>
-                    <span class="addon-name">{{addOn?.name}}</span>
-                    <div class="info-icon">i
-                        <span class="tooltip-icon-text">{{addOn?.tooltip}}</span>
-                    </div>
-                </div>
+          <div class="addon-title">{{ plan?.addonTitle }}</div>
+          <!-- Single title for all addons -->
+          <div class="addon-items">
+            <div class="addon-item" *ngFor="let addOn of plan?.addons">
+              <div class="addon-tick"></div>
+              <span class="addon-name">{{ addOn?.name }}</span>
+              <div class="info-icon">
+                i
+                <span class="tooltip-icon-text">{{ addOn?.tooltip }}</span>
+              </div>
             </div>
+          </div>
         </div>
-    </div>
-    <div class="plan-card-footer" *ngIf="config?.customBtn?.visible || config?.additionalBtn?.visible">
-        <button class="customize" *ngIf="config?.customBtn?.visible"
-            (click)="customBtnClick(plan)">{{config?.customBtn?.title}}</button>
+      </div>
+      <div
+        class="plan-card-footer"
+        *ngIf="config?.customBtn?.visible || config?.additionalBtn?.visible"
+      >
+        <button
+          class="customize"
+          *ngIf="config?.customBtn?.visible"
+          (click)="customBtnClick(plan)"
+        >
+          {{ config?.customBtn?.title }}
+        </button>
 
-        <div class="view-coverage" *ngIf="config?.additionalBtn?.visible" (click)="additionalBtnClick(plan)">
-            {{config?.additionalBtn?.title}}</div>
+        <div
+          class="view-coverage"
+          *ngIf="config?.additionalBtn?.visible"
+          (click)="additionalBtnClick(plan)"
+        >
+          {{ config?.additionalBtn?.title }}
+        </div>
+      </div>
     </div>
+  </div>
 </div>
