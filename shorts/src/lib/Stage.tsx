@@ -13,7 +13,7 @@ const Environment: React.FC = () => {
     scene.environment = tex;
     scene.environmentIntensity = 0.45;
     scene.background = new THREE.Color("#000000");
-    scene.fog = new THREE.Fog("#000000", 30, 60);
+    scene.fog = new THREE.Fog("#000000", 60, 130);
     return () => {
       scene.environment = null;
       tex.dispose();

@@ -6,7 +6,7 @@ import { useThree } from "@react-three/fiber";
 import { useLayoutEffect } from "react";
 import { StickFigure } from "../lib/StickFigure";
 import { Lights, MirrorStage, Bricks, stairBricks } from "../lib/Stage";
-import { CHEER, RISE, RUN, SIT, TIRED, climbAt, sitPelvis, standAt, surfaceX } from "../lib/stairs";
+import { CHEER, RISE, RUN, SIT, TIRED, climbAt, sitPelvis, standAt } from "../lib/stairs";
 import { Pose, STAND, mixPose, sampleNum, smooth, lerp } from "../lib/rig";
 import { Statement, Tag, Watermark } from "../lib/Hud";
 
