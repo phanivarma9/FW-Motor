@@ -8,7 +8,7 @@ import { StickFigure } from "../lib/StickFigure";
 import { Lights, MirrorStage, Bricks, stairBricks } from "../lib/Stage";
 import { CHEER, RISE, RUN, SIT, TIRED, climbAt, sitPelvis, standAt } from "../lib/stairs";
 import { Pose, STAND, mixPose, sampleNum, smooth, lerp } from "../lib/rig";
-import { Statement, Tag, Watermark } from "../lib/Hud";
+import { FollowCta, Statement, Tag, Watermark } from "../lib/Hud";
 
 export const STAIRS_FPS = 30;
 export const STAIRS_DURATION = 720;
@@ -176,6 +176,7 @@ export const StairsOfConsistency: React.FC<{ handle: string }> = ({ handle }) =>
         highlight={1}
       />
       <Watermark handle={handle} />
+      <FollowCta handle={handle} from={C_TOP + 100} />
       <Audio src={staticFile("audio/stairs.wav")} />
     </AbsoluteFill>
   );

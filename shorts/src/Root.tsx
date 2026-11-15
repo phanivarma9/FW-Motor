@@ -17,7 +17,7 @@ export const RemotionRoot: React.FC = () => {
         fps={STAIRS_FPS}
         width={W}
         height={H}
-        defaultProps={{ handle: "@yourpage" }}
+        defaultProps={{ handle: "@firststepfilms" }}
       />
       <Composition
         id="GrowthArrow"
@@ -26,7 +26,7 @@ export const RemotionRoot: React.FC = () => {
         fps={ARROW_FPS}
         width={W}
         height={H}
-        defaultProps={{ handle: "@yourpage" }}
+        defaultProps={{ handle: "@firststepfilms" }}
       />
     </Folder>
   );

@@ -124,3 +124,39 @@ export const Watermark: React.FC<{ handle: string }> = ({ handle }) => (
     {handle.toUpperCase()}
   </div>
 );
+
+/** Closing call to action shown in the last seconds. */
+export const FollowCta: React.FC<{ handle: string; from: number }> = ({ handle, from }) => {
+  const frame = useCurrentFrame();
+  const p = interpolate(frame, [from, from + 14], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 1380,
+        width: "100%",
+        textAlign: "center",
+        opacity: p,
+        transform: `translateY(${(1 - p) * 16}px)`,
+      }}
+    >
+      <span
+        style={{
+          fontFamily: MONO,
+          fontWeight: 700,
+          fontSize: 30,
+          letterSpacing: 5,
+          color: "#fff",
+          padding: "16px 30px",
+          border: "2px solid rgba(255,255,255,0.35)",
+          borderRadius: 999,
+        }}
+      >
+        FOLLOW {handle.toUpperCase()}
+      </span>
+    </div>
+  );
+};
