@@ -8,7 +8,7 @@ import { Lights, MirrorStage } from "../lib/Stage";
 import { GrowingArrow } from "../lib/Arrow";
 import { makePath } from "../lib/path";
 import { Pose, STAND, legDrop, lerp, mixPose, sampleNum, smooth } from "../lib/rig";
-import { FollowCta, MONO, Statement, Tag, Watermark } from "../lib/Hud";
+import { MONO, Statement, Tag, Watermark } from "../lib/Hud";
 
 export const ARROW_FPS = 30;
 export const ARROW_DURATION = 780;
@@ -216,7 +216,6 @@ export const GrowthArrow: React.FC<{ handle: string }> = ({ handle }) => {
         highlight={1}
       />
       <Watermark handle={handle} />
-      <FollowCta handle={handle} from={REVEAL_END + 20} />
       <Audio src={staticFile("audio/arrow.wav")} />
     </AbsoluteFill>
   );
