@@ -165,7 +165,7 @@ const Flash: React.FC<{ text: string; at: number; color?: string; size?: number 
   const o = interpolate(frame, [at, at + 5, at + 34, at + 44], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const s = interpolate(frame, [at, at + 8], [1.25, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
-    <AbsoluteFill style={{ alignItems: "center", paddingTop: 600 }}>
+    <AbsoluteFill style={{ alignItems: "center", paddingTop: 400 }}>
       <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: size, letterSpacing: 10, color, opacity: o, transform: `scale(${s})` }}>
         {text}
       </div>
