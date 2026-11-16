@@ -16,7 +16,7 @@ import { useThree } from "@react-three/fiber";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { loadFont as loadPoppins } from "@remotion/google-fonts/Poppins";
 import { loadFont as loadTelugu } from "@remotion/google-fonts/AnekTelugu";
-import { Officer, OFFICER_HEIGHT } from "../lib/Officer";
+import { HEAD_Y, Officer, OFFICER_HEIGHT } from "../lib/Officer";
 import { Insignia, InsigniaItem } from "../lib/Insignia";
 import { smooth } from "../lib/rig";
 import { MONO } from "../lib/Hud";
@@ -163,6 +163,55 @@ const Step: React.FC<{ i: number; label: THREE.Texture | null; glow: number }> =
   );
 };
 
+// ---------- hook (first ~3.5 s): fast cuts ----------
+export const CUTS = [0, 10, 20, 33, 45, 60];
+const cutOf = (f: number) => {
+  let c = 0;
+  for (let i = 0; i < CUTS.length; i++) if (f >= CUTS[i]) c = i;
+  return { c, u: f - CUTS[c] };
+};
+const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+const insigniaPos = (i: number) => V(pedX(i), pedH(i) + OFFICER_HEIGHT + 0.32, 0);
+const hookShot = (f: number) => {
+  const { c, u } = cutOf(f);
+  const last = RANKS.length - 1;
+  if (c === 0) {
+    // extreme close-up: DGP insignia spinning in
+    const ip = insigniaPos(last);
+    return { pos: ip.clone().add(V(0.12, 0.02, 1.7 - ease(u / 10) * 0.45)), look: ip };
+  }
+  if (c === 1) {
+    // snap zoom onto the constable's eyes
+    const hp = V(pedX(0), pedH(0) + HEAD_Y + 0.02, 0.12);
+    return { pos: hp.clone().add(V(0.04, 0.01, 1.0 - ease(u / 10) * 0.42)), look: hp };
+  }
+  if (c === 2) {
+    // low angle up the staircase while the step lights ignite
+    return { pos: V(-2.6 + u * 0.03, 0.55 + u * 0.01, 3.4), look: V(pedX(8), pedH(8) + 1.6, 0) };
+  }
+  if (c === 3) {
+    // fast lateral whip along the saluting line
+    const x = pedX(1.5) + ease(u / 12) * (pedX(8) - pedX(1.5));
+    const h = pedH(x / SPACING);
+    return { pos: V(x - 0.6, h + 1.7, 6.2), look: V(x + 1.5, h + 1.35, 0) };
+  }
+  if (c === 4) {
+    // wide slam: "13 RANKS"
+    const z = 15 - ease(u / 15) * 3;
+    return { pos: V(pedX(6) - 2.2, pedH(6) + 2.4, z), look: V(pedX(6), pedH(6) + 0.6, 0) };
+  }
+  // title: from the bottom looking up the whole staircase
+  return { pos: V(-3.2 + u * 0.01, 1.1, 6.6), look: V(pedX(6), pedH(6) + 1.6, 0) };
+};
+const hookShake = (f: number) => {
+  let s = 0;
+  for (const [at, amp] of [[0, 0.03], [45, 0.12], [60, 0.05]] as const) {
+    const k = f - at;
+    if (k >= 0 && k < 12) s += Math.exp(-k / 3) * Math.sin(k * 2.9) * amp;
+  }
+  return s;
+};
+
 const camAt = (f: number) => {
   // per-rank framing
   const frame = (k: number, t: number) => {
@@ -181,17 +230,18 @@ const camAt = (f: number) => {
     const e = ease(t / WHIP);
     cur = { pos: prev.pos.clone().lerp(cur.pos, e), look: prev.look.clone().lerp(cur.look, e) };
   }
-  // intro: wide diagonal of the whole ladder, then whip into rank 0
-  const intro = {
-    pos: new THREE.Vector3(-3.4, 1.1, 6.5),
-    look: new THREE.Vector3(pedX(6), pedH(6) + 1.6, 0),
-  };
+  // intro: 3-second fast-cut hook, then whip into rank 0
   if (f < INTRO) {
-    const drift = f / INTRO;
-    intro.pos.x += drift * 0.8;
-    const e = ease(Math.max(0, (f - (INTRO - 16)) / 16));
-    const target = frame(0, 0);
-    return { pos: intro.pos.clone().lerp(target.pos, e), look: intro.look.clone().lerp(target.look, e) };
+    const shot = hookShot(f);
+    const shake = hookShake(f);
+    shot.pos.x += shake * 0.6;
+    shot.pos.y += shake;
+    const e = ease(Math.max(0, (f - (INTRO - 14)) / 14));
+    if (e > 0) {
+      const target = frame(0, 0);
+      return { pos: shot.pos.clone().lerp(target.pos, e), look: shot.look.clone().lerp(target.look, e) };
+    }
+    return shot;
   }
   // outro: pull back to show the whole ladder
   const outStart = RANKS_END;
@@ -199,8 +249,8 @@ const camAt = (f: number) => {
     const e = ease(Math.min(1, (f - outStart) / 30));
     const last = frame(RANKS.length - 1, LENS[RANKS.length - 1]);
     const wide = {
-      pos: new THREE.Vector3(pedX(RANKS.length - 1) + 2.6, pedH(RANKS.length - 1) + 4.2, 6.8),
-      look: new THREE.Vector3(pedX(7), pedH(7) + 0.6, 0),
+      pos: new THREE.Vector3(pedX(11.3), pedH(11.3) + 1.4, 16),
+      look: new THREE.Vector3(pedX(11.7), pedH(11.7) + 1.1, 0),
     };
     return { pos: last.pos.clone().lerp(wide.pos, e), look: last.look.clone().lerp(wide.look, e) };
   }
@@ -233,6 +283,15 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
+      <AbsoluteFill
+        style={{
+          transform: `scale(${
+            frame < INTRO
+              ? 1 + Math.max(...CUTS.map((c) => (frame >= c && frame - c < 8 ? 0.07 * Math.exp(-(frame - c) / 2.5) : 0)))
+              : 1
+          })`,
+        }}
+      >
       <ThreeCanvas width={width} height={height} shadows camera={{ fov: 32, near: 0.1, far: 60 }}>
         <Rig frame={frame} />
         <Environment />
@@ -250,11 +309,15 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
         {RANKS.map((r, i) => {
           const focused = inRanks && i === k;
           const lt = focused ? t : 999;
-          const salute = focused ? smooth((lt - 16) / 10) * (1 - smooth((lt - (LENS[i] - 30)) / 12)) : 0;
-          const glow = frame >= outStart ? 1 : !inRanks ? 0.1 : i < k ? 0.75 : focused ? smooth(lt / 8) : 0;
+          const inHook = frame < INTRO;
+          const hookSalute = inHook ? smooth((frame - 33) / 5) * (1 - smooth((frame - 58) / 6)) : 0;
+          const salute = focused ? smooth((lt - 16) / 10) * (1 - smooth((lt - (LENS[i] - 30)) / 12)) : hookSalute;
+          const hookGlow = frame >= 20 + i * 0.9 ? (frame < INTRO - 14 ? 1 : 0.3) : 0.05;
+          const glow = frame >= outStart ? 1 : inHook ? hookGlow : i < k ? 0.75 : focused ? smooth(lt / 8) : 0;
           // insignia: pop + spin when its rank comes up, gentle sway otherwise
+          const hookSpin = inHook && i === RANKS.length - 1 && frame < 10 ? (1 - ease(frame / 10)) * Math.PI * 3 : 0;
           const pop = focused ? 1 + 0.35 * Math.sin(Math.min(1, lt / 14) * Math.PI) : 1;
-          const spin = focused ? (1 - ease(Math.min(1, lt / 18))) * Math.PI * 2 : 0;
+          const spin = (focused ? (1 - ease(Math.min(1, lt / 18))) * Math.PI * 2 : 0) + hookSpin;
           const sway = Math.sin((frame + i * 17) * 0.06) * 0.35;
           const h = pedH(i);
           return (
@@ -268,9 +331,9 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
                   const c = (frame + i * 23) % 97;
                   return c < 3 ? c / 3 : c < 6 ? 1 - (c - 3) / 3 : 0;
                 })()}
-                brows={salute * 0.8}
+                brows={Math.max(salute * 0.8, frame >= 10 && frame < 20 && i === 0 ? smooth((frame - 12) / 4) : 0)}
                 smile={focused ? smooth((lt - 70) / 14) : 0.15}
-                look={focused ? 0 : Math.sin((frame + i * 31) * 0.02) * 0.6}
+                look={focused || frame < 20 ? 0 : Math.sin((frame + i * 31) * 0.02) * 0.6}
               />
               <group
                 position={[pedX(i), h + OFFICER_HEIGHT + 0.32 + Math.sin((frame + i * 9) * 0.07) * 0.04, 0]}
@@ -283,19 +346,84 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
           );
         })}
       </ThreeCanvas>
+      </AbsoluteFill>
 
       {/* brand mark, top centre like a channel logo */}
       <div style={{ position: "absolute", top: 80, width: "100%", textAlign: "center", fontFamily: MONO, fontSize: 26, letterSpacing: 6, color: "rgba(255,255,255,0.4)" }}>
         {handle.toUpperCase()}
       </div>
 
-      {/* intro hook */}
-      {frame < INTRO + 6 ? (
-        <AbsoluteFill style={{ alignItems: "center", paddingTop: 260 }}>
-          <div style={{ fontFamily: poppins.fontFamily, fontWeight: 800, fontSize: 92, color: "#ffc72c", letterSpacing: -1, opacity: interpolate(frame, [0, 6, INTRO - 6, INTRO], [0, 1, 1, 0]) }}>
+      {/* hook: flash frames on every cut */}
+      {frame < INTRO + 2 ? (
+        <AbsoluteFill
+          style={{
+            backgroundColor: "#fff",
+            pointerEvents: "none",
+            opacity: Math.max(
+              ...CUTS.map((c, i) => {
+                const k = frame - c;
+                const peak = i === 4 ? 0.95 : i === 0 ? 0.0 : 0.55;
+                return k >= 0 && k < 4 ? peak * (1 - k / 4) : 0;
+              }),
+              frame >= INTRO - 14 && frame < INTRO - 10 ? 0.35 : 0,
+            ),
+          }}
+        />
+      ) : null}
+      {/* "13 RANKS" slam */}
+      {frame >= CUTS[4] && frame < CUTS[5] ? (
+        <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+          <div
+            style={{
+              fontFamily: poppins.fontFamily,
+              fontWeight: 800,
+              fontSize: 168,
+              lineHeight: 1,
+              color: "#fff",
+              letterSpacing: -6,
+              textShadow: "0 0 40px rgba(80,140,255,0.8), 0 8px 30px rgba(0,0,0,0.8)",
+              transform: `scale(${interpolate(frame, [CUTS[4], CUTS[4] + 5], [1.35, 1], { extrapolateRight: "clamp" })})`,
+              opacity: interpolate(frame, [CUTS[4], CUTS[4] + 2, CUTS[5] - 3, CUTS[5]], [0, 1, 1, 0]),
+            }}
+          >
+            13 RANKS
+          </div>
+          <div style={{ display: "flex", marginTop: 18, width: 520, height: 14 }}>
+            <div style={{ flex: interpolate(frame, [CUTS[4] + 2, CUTS[4] + 9], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }), background: "#e53935" }} />
+            <div style={{ flex: interpolate(frame, [CUTS[4] + 2, CUTS[4] + 9], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }), background: "#2f6bff" }} />
+          </div>
+        </AbsoluteFill>
+      ) : null}
+      {/* title */}
+      {frame >= CUTS[5] && frame < INTRO + 4 ? (
+        <AbsoluteFill style={{ alignItems: "center", paddingTop: 250 }}>
+          <div
+            style={{
+              fontFamily: poppins.fontFamily,
+              fontWeight: 800,
+              fontSize: 104,
+              color: "#ffc72c",
+              letterSpacing: -2,
+              transform: `scale(${interpolate(frame, [CUTS[5], CUTS[5] + 5], [1.5, 1], { extrapolateRight: "clamp" })})`,
+              opacity: interpolate(frame, [CUTS[5], CUTS[5] + 2, INTRO - 4, INTRO + 2], [0, 1, 1, 0], { extrapolateRight: "clamp" }),
+              textShadow: "0 6px 30px rgba(0,0,0,0.85)",
+            }}
+          >
             POLICE RANKS
           </div>
-
+          <div
+            style={{
+              fontFamily: MONO,
+              fontWeight: 700,
+              fontSize: 40,
+              letterSpacing: 10,
+              color: "#fff",
+              marginTop: 6,
+              opacity: interpolate(frame, [CUTS[5] + 6, CUTS[5] + 10, INTRO - 4, INTRO + 2], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
+            }}
+          >
+            BOTTOM → TOP
+          </div>
         </AbsoluteFill>
       ) : null}
 

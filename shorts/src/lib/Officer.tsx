@@ -216,4 +216,6 @@ export const Officer: React.FC<Props> = ({ position, rotationY = 0, salute = 0, 
   );
 };
 
+/** height of the head centre above the feet */
+export const HEAD_Y = PELVIS_Y + TORSO + 0.08 + NECK / 2 + 0.15;
 export const OFFICER_HEIGHT = PELVIS_Y + TORSO + 0.08 + NECK / 2 + 0.15 + 0.29;
