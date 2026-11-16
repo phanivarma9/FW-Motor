@@ -368,7 +368,7 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       {needsBlur ? (
-        <CameraMotionBlur samples={6} shutterAngle={200}>
+        <CameraMotionBlur samples={4} shutterAngle={180}>
           <Scene3D />
         </CameraMotionBlur>
       ) : (
