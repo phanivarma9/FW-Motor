@@ -53,10 +53,11 @@ export const OUTRO: number = TIMING.outro;
 export const POLICE_DURATION = RANKS_END + OUTRO;
 const WHIP = 12;
 
-const SPACING = 2.35;
-const RADIUS = 0.82;
+// Staircase of ranks: step i is a solid block, each one higher than the last.
+const SPACING = 2.2; // step run
+const DEPTH = 2.4; // step width (towards camera)
 const pedX = (i: number) => i * SPACING;
-const pedH = (i: number) => 0.85 + i * 0.16;
+const pedH = (i: number) => 1.0 + i * 0.42;
 
 /** current focused rank + local frame inside its segment */
 const focusAt = (f: number) => {
@@ -85,27 +86,23 @@ const useLabelTextures = () => {
       c.height = 420;
       const g = c.getContext("2d")!;
       g.clearRect(0, 0, c.width, c.height);
-      // main plate
-      g.fillStyle = "#121212";
-      g.fillRect(40, 30, 944, 230);
-      g.strokeStyle = "#d9a520";
-      g.lineWidth = 10;
-      g.strokeRect(45, 35, 934, 220);
-      g.fillStyle = "#ffc72c";
-      const size = r.abbr.length > 10 ? 118 : 150;
+      // engraved white signage with a red/blue police bar
+      g.fillStyle = "#ffffff";
+      const size = r.abbr.length > 10 ? 120 : 160;
       g.font = `800 ${size}px ${poppins.fontFamily}`;
       g.textAlign = "center";
       g.textBaseline = "middle";
-      g.fillText(r.abbr, 512, 152);
-      // sub plate
-      g.fillStyle = "#121212";
-      g.fillRect(110, 290, 804, 90);
-      g.strokeStyle = "#d9a520";
-      g.lineWidth = 5;
-      g.strokeRect(112, 292, 800, 86);
-      g.fillStyle = "#ffffff";
-      g.font = `700 50px ${poppins.fontFamily}`;
-      g.fillText(r.full, 512, 337, 760);
+      g.shadowColor = "rgba(120,170,255,0.55)";
+      g.shadowBlur = 24;
+      g.fillText(r.abbr, 512, 140);
+      g.shadowBlur = 0;
+      g.fillStyle = "#e53935";
+      g.fillRect(262, 252, 250, 12);
+      g.fillStyle = "#2f6bff";
+      g.fillRect(512, 252, 250, 12);
+      g.fillStyle = "rgba(255,255,255,0.75)";
+      g.font = `700 48px ${poppins.fontFamily}`;
+      g.fillText(r.full.toUpperCase(), 512, 330, 900);
       const tex = new THREE.CanvasTexture(c);
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = 4;
@@ -122,8 +119,8 @@ const Environment: React.FC = () => {
     const tex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environment = tex;
     scene.environmentIntensity = 0.35;
-    scene.background = new THREE.Color("#000000");
-    scene.fog = new THREE.Fog("#000000", 12, 26);
+    scene.background = new THREE.Color("#05070c");
+    scene.fog = new THREE.Fog("#05070c", 14, 34);
     return () => {
       scene.environment = null;
       tex.dispose();
@@ -133,33 +130,33 @@ const Environment: React.FC = () => {
   return null;
 };
 
-const Pedestal: React.FC<{ i: number; label: THREE.Texture | null; glow: number }> = ({ i, label, glow }) => {
+const Step: React.FC<{ i: number; label: THREE.Texture | null; glow: number }> = ({ i, label, glow }) => {
   const h = pedH(i);
   return (
     <group position={[pedX(i), 0, 0]}>
       <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[RADIUS, RADIUS, h, 64]} />
-        <meshPhysicalMaterial color="#0b0b0b" roughness={0.35} clearcoat={1} clearcoatRoughness={0.2} />
+        <boxGeometry args={[SPACING, h, DEPTH]} />
+        <meshStandardMaterial color="#1b1c21" roughness={0.82} />
       </mesh>
-      {/* gold rim band */}
-      <mesh position={[0, h - 0.07, 0]}>
-        <cylinderGeometry args={[RADIUS + 0.012, RADIUS + 0.012, 0.14, 64, 1, true]} />
-        <meshPhysicalMaterial color="#e3ad2a" metalness={1} roughness={0.25} emissive="#c48a10" emissiveIntensity={0.25 + glow * 0.6} />
+      {/* tread top */}
+      <mesh position={[0, h + 0.01, 0]} receiveShadow>
+        <boxGeometry args={[SPACING + 0.02, 0.02, DEPTH + 0.02]} />
+        <meshStandardMaterial color="#2a2c33" roughness={0.6} />
       </mesh>
-      <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[RADIUS - 0.01, 0.022, 12, 80]} />
-        <meshStandardMaterial color="#ffd35a" emissive="#ffc22e" emissiveIntensity={0.5 + glow * 1.5} />
+      {/* LED strip along the front nosing - lights up as the climb reaches this step */}
+      <mesh position={[0, h - 0.02, DEPTH / 2 + 0.012]}>
+        <boxGeometry args={[SPACING - 0.04, 0.035, 0.02]} />
+        <meshStandardMaterial color="#cfe0ff" emissive="#8fb6ff" emissiveIntensity={0.08 + glow * 2.6} toneMapped={false} />
       </mesh>
-      {/* top disc */}
-      <mesh position={[0, h + 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[RADIUS - 0.03, 64]} />
-        <meshPhysicalMaterial color="#141414" roughness={0.5} />
+      {/* LED strip on the riser edge facing the lower step */}
+      <mesh position={[-SPACING / 2 - 0.012, h - 0.02, 0]}>
+        <boxGeometry args={[0.02, 0.035, DEPTH - 0.04]} />
+        <meshStandardMaterial color="#cfe0ff" emissive="#8fb6ff" emissiveIntensity={0.08 + glow * 2.6} toneMapped={false} />
       </mesh>
-      {/* label (slightly curved plane would be nicer; flat reads clean) */}
       {label ? (
-        <mesh position={[0, h - 0.45, RADIUS + 0.01]}>
-          <planeGeometry args={[1.45, 1.45 * (420 / 1024)]} />
-          <meshBasicMaterial map={label} transparent toneMapped={false} />
+        <mesh position={[0, h - 0.42, DEPTH / 2 + 0.006]}>
+          <planeGeometry args={[1.7, 1.7 * (420 / 1024)]} />
+          <meshBasicMaterial map={label} transparent toneMapped={false} opacity={0.35 + glow * 0.65} />
         </mesh>
       ) : null}
     </group>
@@ -173,8 +170,8 @@ const camAt = (f: number) => {
     const x = pedX(k);
     const h = pedH(k);
     return {
-      pos: new THREE.Vector3(x + 0.35, h + 1.1, 9.6 - push),
-      look: new THREE.Vector3(x, h + 0.85, 0),
+      pos: new THREE.Vector3(x + 1.0, h + 1.35, 9.6 - push),
+      look: new THREE.Vector3(x + 0.2, h + 0.85, 0),
     };
   };
   const { k, t } = focusAt(f);
@@ -186,8 +183,8 @@ const camAt = (f: number) => {
   }
   // intro: wide diagonal of the whole ladder, then whip into rank 0
   const intro = {
-    pos: new THREE.Vector3(-4.2, 1.2, 8.5),
-    look: new THREE.Vector3(9, 3.0, -1),
+    pos: new THREE.Vector3(-3.4, 1.1, 6.5),
+    look: new THREE.Vector3(pedX(6), pedH(6) + 1.6, 0),
   };
   if (f < INTRO) {
     const drift = f / INTRO;
@@ -202,8 +199,8 @@ const camAt = (f: number) => {
     const e = ease(Math.min(1, (f - outStart) / 30));
     const last = frame(RANKS.length - 1, LENS[RANKS.length - 1]);
     const wide = {
-      pos: new THREE.Vector3(pedX(RANKS.length - 1) + 3.2, 4.4, 9.5),
-      look: new THREE.Vector3(pedX(8), 2.6, 0),
+      pos: new THREE.Vector3(pedX(RANKS.length - 1) + 2.6, pedH(RANKS.length - 1) + 4.2, 6.8),
+      look: new THREE.Vector3(pedX(7), pedH(7) + 0.6, 0),
     };
     return { pos: last.pos.clone().lerp(wide.pos, e), look: last.look.clone().lerp(wide.look, e) };
   }
@@ -254,7 +251,7 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
           const focused = inRanks && i === k;
           const lt = focused ? t : 999;
           const salute = focused ? smooth((lt - 16) / 10) * (1 - smooth((lt - (LENS[i] - 30)) / 12)) : 0;
-          const glow = focused ? smooth(lt / 10) : frame >= outStart ? 0.5 : 0;
+          const glow = frame >= outStart ? 1 : !inRanks ? 0.1 : i < k ? 0.75 : focused ? smooth(lt / 8) : 0;
           // insignia: pop + spin when its rank comes up, gentle sway otherwise
           const pop = focused ? 1 + 0.35 * Math.sin(Math.min(1, lt / 14) * Math.PI) : 1;
           const spin = focused ? (1 - ease(Math.min(1, lt / 18))) * Math.PI * 2 : 0;
@@ -262,7 +259,7 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
           const h = pedH(i);
           return (
             <group key={r.abbr}>
-              <Pedestal i={i} label={labels ? labels[i] : null} glow={glow} />
+              <Step i={i} label={labels ? labels[i] : null} glow={glow} />
               <Officer
                 position={[pedX(i), h, 0]}
                 salute={salute}
