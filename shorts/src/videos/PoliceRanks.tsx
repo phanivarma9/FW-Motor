@@ -1,6 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { ThreeCanvas } from "@remotion/three";
-import { CameraMotionBlur } from "@remotion/motion-blur";
 import {
   AbsoluteFill,
   Audio,
@@ -358,22 +357,12 @@ const Scene3D: React.FC = () => {
 // ---------- overlays ----------
 export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
   const frame = useCurrentFrame();
-  const { k, t } = focusAt(frame);
+  const { k } = focusAt(frame);
   const inRanks = frame >= INTRO && frame < RANKS_END;
-  const outStart = RANKS_END;
-  // cinematic motion blur only where the camera moves fast (keeps render time sane)
-  const atCut = CUTS.some((c) => frame >= c && frame < c + 2); // never blend across a hard cut
-  const needsBlur = (frame < INTRO + 2 && !atCut) || (inRanks && k > 0 && t < WHIP + 3) || (frame >= outStart && frame < outStart + 32);
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {needsBlur ? (
-        <CameraMotionBlur samples={5} shutterAngle={110}>
-          <Scene3D />
-        </CameraMotionBlur>
-      ) : (
-        <Scene3D />
-      )}
+      <Scene3D />
 
       {/* brand mark, top centre like a channel logo */}
       <div style={{ position: "absolute", top: 80, width: "100%", textAlign: "center", fontFamily: MONO, fontSize: 26, letterSpacing: 6, color: "rgba(255,255,255,0.4)" }}>
