@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { ThreeCanvas } from "@remotion/three";
+import { CameraMotionBlur } from "@remotion/motion-blur";
 import {
   AbsoluteFill,
   Audio,
@@ -148,6 +149,13 @@ const Step: React.FC<{ i: number; label: THREE.Texture | null; glow: number }> =
         <boxGeometry args={[SPACING - 0.04, 0.035, 0.02]} />
         <meshStandardMaterial color="#cfe0ff" emissive="#8fb6ff" emissiveIntensity={0.08 + glow * 2.6} toneMapped={false} />
       </mesh>
+      {/* fake bloom: soft additive halos around the LED strips */}
+      {[0.09, 0.18].map((hgt, n) => (
+        <mesh key={n} position={[0, h - 0.02, DEPTH / 2 + 0.03 + n * 0.01]}>
+          <planeGeometry args={[SPACING + hgt, hgt]} />
+          <meshBasicMaterial color="#7aa6ff" transparent opacity={glow * (n === 0 ? 0.32 : 0.12)} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        </mesh>
+      ))}
       {/* LED strip on the riser edge facing the lower step */}
       <mesh position={[-SPACING / 2 - 0.012, h - 0.02, 0]}>
         <boxGeometry args={[0.02, 0.035, DEPTH - 0.04]} />
@@ -271,8 +279,8 @@ const Rig: React.FC<{ frame: number }> = ({ frame }) => {
   return null;
 };
 
-// ---------- overlays ----------
-export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
+// ---------- 3D scene (own component so motion blur can resample it at sub-frame times) ----------
+const Scene3D: React.FC = () => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const labels = useLabelTextures();
@@ -280,9 +288,7 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
   const inRanks = frame >= INTRO && frame < RANKS_END;
   const outStart = RANKS_END;
   const focusX = camAt(frame).look.x;
-
   return (
-    <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <AbsoluteFill
         style={{
           transform: `scale(${
@@ -296,7 +302,7 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
         <Rig frame={frame} />
         <Environment />
         <ambientLight intensity={0.22} />
-        <directionalLight position={[focusX - 2, 9, 7]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]}
+        <directionalLight position={[focusX - 2, 9, 7]} intensity={1.6} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0003} shadow-radius={4}
           shadow-camera-left={-6} shadow-camera-right={6} shadow-camera-top={8} shadow-camera-bottom={-2}
           target-position={[focusX, 0, 0]} />
         <pointLight position={[focusX, 6.5, 2.2]} intensity={28} distance={10} color="#fff1dc" />
@@ -347,6 +353,27 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
         })}
       </ThreeCanvas>
       </AbsoluteFill>
+  );
+};
+
+// ---------- overlays ----------
+export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
+  const frame = useCurrentFrame();
+  const { k, t } = focusAt(frame);
+  const inRanks = frame >= INTRO && frame < RANKS_END;
+  const outStart = RANKS_END;
+  // cinematic motion blur only where the camera moves fast (keeps render time sane)
+  const needsBlur = frame < INTRO + 2 || (inRanks && k > 0 && t < WHIP + 3) || (frame >= outStart && frame < outStart + 32);
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: "#000" }}>
+      {needsBlur ? (
+        <CameraMotionBlur samples={6} shutterAngle={200}>
+          <Scene3D />
+        </CameraMotionBlur>
+      ) : (
+        <Scene3D />
+      )}
 
       {/* brand mark, top centre like a channel logo */}
       <div style={{ position: "absolute", top: 80, width: "100%", textAlign: "center", fontFamily: MONO, fontSize: 26, letterSpacing: 6, color: "rgba(255,255,255,0.4)" }}>
@@ -437,6 +464,17 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
 
 
 
+      {/* film finish: vignette + fine animated grain */}
+      <AbsoluteFill style={{ pointerEvents: "none", background: "radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%)" }} />
+      <AbsoluteFill style={{ pointerEvents: "none", opacity: 0.07, mixBlendMode: "overlay" }}>
+        <svg width="100%" height="100%">
+          <filter id="grain">
+            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed={Math.floor(frame) % 50} stitchTiles="stitch" />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#grain)" />
+        </svg>
+      </AbsoluteFill>
       <Audio src={staticFile("audio/police.wav")} volume={0.55} />
       {TIMING.voice.map((_, i) => {
         const from = i === 0 ? 4 : i <= RANKS.length ? STARTS[i - 1] + 6 : RANKS_END + 8;

@@ -19,7 +19,7 @@ if (workerRange) {
   const composition = await selectComposition({ serveUrl, id: comp, browserExecutable, chromiumOptions });
   let last = -1;
   await renderMedia({
-    serveUrl, composition, codec: "h264", outputLocation: file, scale: 0.75, concurrency: 1, muted: true,
+    serveUrl, composition, codec: "h264", outputLocation: file, scale: Number(process.env.SCALE || 1), concurrency: 1, muted: true, jpegQuality: 95, crf: 12,
     frameRange: [Number(a), Number(b)], timeoutInMilliseconds: 180000, browserExecutable, chromiumOptions, overwrite: true,
     onProgress: ({ renderedFrames }) => {
       if (renderedFrames - last >= 15) { last = renderedFrames; console.log(`chunk ${a}-${b}: ${renderedFrames}/${Number(b) - Number(a) + 1}`); }
@@ -33,14 +33,16 @@ fs.mkdirSync(tmp, { recursive: true });
 const t0 = Date.now();
 const serveUrl = await bundle({ entryPoint: path.resolve("src/index.ts") });
 const composition = await selectComposition({ serveUrl, id: comp, browserExecutable, chromiumOptions });
-const total = composition.durationInFrames;
+// optional sub-range for tests: FRAMES=0-125
+const [f0, f1] = (process.env.FRAMES || `0-${composition.durationInFrames - 1}`).split("-").map(Number);
+const total = f1 - f0 + 1;
 const n = Number(chunksArg);
 const size = Math.ceil(total / n);
 const parts = [];
 await Promise.all(
   Array.from({ length: n }, (_, i) => {
-    const a = i * size;
-    const b = Math.min(total - 1, a + size - 1);
+    const a = f0 + i * size;
+    const b = Math.min(f1, a + size - 1);
     const file = path.join(tmp, `part${i}.mp4`);
     parts.push(file);
     return new Promise((res, rej) => {
@@ -51,11 +53,11 @@ await Promise.all(
 );
 // audio track for the full composition
 const audio = path.join(tmp, "audio.wav");
-await renderMedia({ serveUrl, composition, codec: "wav", outputLocation: audio, browserExecutable, chromiumOptions, overwrite: true });
+await renderMedia({ serveUrl, composition, codec: "wav", outputLocation: audio, browserExecutable, chromiumOptions, overwrite: true, frameRange: [f0, f1] });
 fs.writeFileSync(path.join(tmp, "list.txt"), parts.map((p) => `file '${p}'`).join("\n"));
 const final = `out/${name}.mp4`;
 execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", path.join(tmp, "list.txt"), "-i", audio,
-  "-map", "0:v", "-map", "1:a", "-vf", "scale=1080:1920:flags=lanczos", "-c:v", "libx264", "-preset", "slow", "-crf", "18",
-  "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", final]);
+  "-map", "0:v", "-map", "1:a", "-vf", "scale=1080:1920:flags=lanczos", "-c:v", "libx264", "-preset", "slow", "-crf", "15",
+  "-profile:v", "high", "-pix_fmt", "yuv420p", "-af", "loudnorm=I=-14:TP=-1.5:LRA=11", "-ar", "48000", "-c:a", "aac", "-b:a", "256k", "-shortest", "-movflags", "+faststart", final]);
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log("DONE", final, `${((Date.now() - t0) / 60000).toFixed(1)} min`);
