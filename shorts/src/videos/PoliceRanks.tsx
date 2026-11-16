@@ -17,7 +17,7 @@ import { loadFont as loadPoppins } from "@remotion/google-fonts/Poppins";
 import { loadFont as loadTelugu } from "@remotion/google-fonts/AnekTelugu";
 import { HEAD_Y, Officer, OFFICER_HEIGHT } from "../lib/Officer";
 import { Insignia, InsigniaItem } from "../lib/Insignia";
-import { smooth } from "../lib/rig";
+import { lerp, smooth } from "../lib/rig";
 import { MONO } from "../lib/Hud";
 import TIMING from "./police-timing.json";
 
@@ -50,7 +50,6 @@ export const STARTS: number[] = LENS.map((_, k) => INTRO + LENS.slice(0, k).redu
 export const RANKS_END: number = INTRO + LENS.reduce((a, b) => a + b, 0);
 export const OUTRO: number = TIMING.outro;
 export const POLICE_DURATION = RANKS_END + OUTRO;
-const WHIP = 12;
 
 // Staircase of ranks: step i is a solid block, each one higher than the last.
 const SPACING = 2.2; // step run
@@ -119,7 +118,7 @@ const Environment: React.FC = () => {
     scene.environment = tex;
     scene.environmentIntensity = 0.35;
     scene.background = new THREE.Color("#05070c");
-    scene.fog = new THREE.Fog("#05070c", 14, 34);
+    scene.fog = new THREE.Fog("#05070c", 20, 52);
     return () => {
       scene.environment = null;
       tex.dispose();
@@ -218,23 +217,42 @@ const hookShake = (f: number) => {
   return s;
 };
 
+// Per-rank camera styles: varied, drone-like moves so every rank feels like a new shot.
+type ShotStyle = "full" | "rise" | "orbit" | "wide";
+const STYLES: ShotStyle[] = ["full", "rise", "orbit", "full", "wide", "orbit", "rise", "full", "orbit", "rise", "wide", "orbit", "full"];
+const SWOOP = 18; // frames for the arcing transition between ranks
+
+const rankShot = (k: number, t: number) => {
+  const L = LENS[k];
+  const u = Math.max(0, Math.min(1, t / L));
+  const e = smooth(u);
+  const c = V(pedX(k), pedH(k) + 0.95, 0); // officer centre
+  switch (STYLES[k]) {
+    case "rise": // starts low in front, cranes up and looks down over the lit stairs
+      return { pos: c.clone().add(V(0.9, lerp(-0.2, 4.6, e), lerp(10.5, 7.8, e))), look: c.clone().add(V(0.1, lerp(0.25, -0.35, e), 0)) };
+    case "orbit": { // high sweeping arc around the officer
+      const a = lerp(-0.6, 0.38, e);
+      const r = 9.2;
+      return { pos: c.clone().add(V(Math.sin(a) * r, 2.9, Math.cos(a) * r)), look: c.clone().add(V(0, 0.15, 0)) };
+    }
+    case "wide": // big side view of the staircase climbing up to him
+      return { pos: c.clone().add(V(lerp(-7.2, -6.2, e), 2.6, lerp(11.5, 10.5, e))), look: c.clone().add(V(1.1, 0.3, 0)) };
+    default: // full shot: whole officer, his step and the neighbours, slow push
+      return { pos: c.clone().add(V(1.3, 0.55, lerp(13.5, 12.0, e))), look: c.clone().add(V(0.15, 0.05, 0)) };
+  }
+};
+
 const camAt = (f: number) => {
-  // per-rank framing
-  const frame = (k: number, t: number) => {
-    const push = smooth(t / LENS[k]) * 0.6;
-    const x = pedX(k);
-    const h = pedH(k);
-    return {
-      pos: new THREE.Vector3(x + 1.0, h + 1.35, 9.6 - push),
-      look: new THREE.Vector3(x + 0.2, h + 0.85, 0),
-    };
-  };
   const { k, t } = focusAt(f);
-  let cur = frame(k, Math.max(0, t));
-  if (k > 0 && t < WHIP) {
-    const prev = frame(k - 1, LENS[k - 1]);
-    const e = ease(t / WHIP);
-    cur = { pos: prev.pos.clone().lerp(cur.pos, e), look: prev.look.clone().lerp(cur.look, e) };
+  let cur = rankShot(k, Math.max(0, t));
+  if (k > 0 && t < SWOOP) {
+    // drone swoop: arc up and over to the next rank
+    const prev = rankShot(k - 1, LENS[k - 1]);
+    const e = ease(t / SWOOP);
+    const pos = prev.pos.clone().lerp(cur.pos, e);
+    pos.y += Math.sin(Math.PI * e) * 2.2;
+    pos.z += Math.sin(Math.PI * e) * 1.5;
+    cur = { pos, look: prev.look.clone().lerp(cur.look, e) };
   }
   // intro: 3-second fast-cut hook, then whip into rank 0
   if (f < INTRO) {
@@ -244,21 +262,27 @@ const camAt = (f: number) => {
     shot.pos.y += shake;
     const e = ease(Math.max(0, (f - (INTRO - 14)) / 14));
     if (e > 0) {
-      const target = frame(0, 0);
+      const target = rankShot(0, 0);
       return { pos: shot.pos.clone().lerp(target.pos, e), look: shot.look.clone().lerp(target.look, e) };
     }
     return shot;
   }
-  // outro: pull back to show the whole ladder
+  // outro: hold on the DGP at the top, then a big drone pull-up revealing the whole lit staircase
   const outStart = RANKS_END;
   if (f >= outStart) {
-    const e = ease(Math.min(1, (f - outStart) / 30));
-    const last = frame(RANKS.length - 1, LENS[RANKS.length - 1]);
-    const wide = {
-      pos: new THREE.Vector3(pedX(11.3), pedH(11.3) + 1.4, 16),
-      look: new THREE.Vector3(pedX(11.7), pedH(11.7) + 1.1, 0),
+    const last = rankShot(RANKS.length - 1, LENS[RANKS.length - 1]);
+    const top = {
+      pos: V(pedX(11.3), pedH(11.3) + 1.4, 16),
+      look: V(pedX(11.7), pedH(11.7) + 1.1, 0),
     };
-    return { pos: last.pos.clone().lerp(wide.pos, e), look: last.look.clone().lerp(wide.look, e) };
+    const sky = {
+      pos: V(pedX(12) + 4.5, pedH(12) + 8.5, 11.5),
+      look: V(pedX(7.5), pedH(7.5) + 0.2, 0),
+    };
+    const e1 = ease(Math.min(1, (f - outStart) / 24));
+    const a = { pos: last.pos.clone().lerp(top.pos, e1), look: last.look.clone().lerp(top.look, e1) };
+    const e2 = ease(Math.max(0, Math.min(1, (f - outStart - 40) / (OUTRO - 50))));
+    return { pos: a.pos.clone().lerp(sky.pos, e2), look: a.look.clone().lerp(sky.look, e2) };
   }
   return cur;
 };
@@ -301,7 +325,7 @@ const Scene3D: React.FC = () => {
         <Environment />
         <ambientLight intensity={0.22} />
         <directionalLight position={[focusX - 2, 9, 7]} intensity={1.6} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0003} shadow-radius={4}
-          shadow-camera-left={-6} shadow-camera-right={6} shadow-camera-top={8} shadow-camera-bottom={-2}
+          shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-4}
           target-position={[focusX, 0, 0]} />
         <pointLight position={[focusX, 6.5, 2.2]} intensity={28} distance={10} color="#fff1dc" />
         <directionalLight position={[focusX + 4, 3, -6]} intensity={0.9} color="#cfe0ff" />
