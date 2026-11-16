@@ -11,7 +11,7 @@ import { Pose, STAND, legDrop, lerp, mixPose, sampleNum, smooth } from "../lib/r
 import { MONO, Statement, Tag, Watermark } from "../lib/Hud";
 
 export const ARROW_FPS = 30;
-export const ARROW_DURATION = 780;
+export const ARROW_DURATION = 420;
 
 const PATH = makePath([
   [-0.6, 0.08],
@@ -29,12 +29,12 @@ const PRE_ROCKET = PATH.vertexDist[ROCKET_SEG];
 const THICK = 0.16;
 const BEHIND = 0.75; // rider stands this far behind the tip
 
-const G_START = 60;
-const SPEED = 0.036; // path units per frame while grinding
+const G_START = 20;
+const SPEED = 0.085; // path units per frame while grinding (running pace)
 const G_END = G_START + (PRE_ROCKET - 0.5) / SPEED; // ~385
-const ROCKET_FRAMES = 62;
+const ROCKET_FRAMES = 30;
 const R_END = G_END + ROCKET_FRAMES;
-const REVEAL_END = R_END + 90;
+const REVEAL_END = R_END + 45;
 
 export const arrowLength = (f: number) => {
   if (f < G_START) return 0;
@@ -93,7 +93,7 @@ const segPose = (seg: number, u: number, f: number): Pose => {
   if (seg === ROCKET_SEG) return SURF;
   if (seg % 2 === 1 && seg < ROCKET_SEG - 1) return balance(f);
   const slope = Math.tan(PATH.at(u).angle);
-  return walk(u * 3.2, 0.12 + slope * 0.25);
+  return walk(u * 3.2, 0.28 + slope * 0.25);
 };
 
 const rider = (f: number) => {
@@ -130,7 +130,7 @@ const WAIT_POS: [number, number, number] = [-2.3, 0, -1.6];
 
 const waiter = (f: number) => {
   const lookUp: Pose = { ...STAND, head: -0.45 + Math.sin(f * 0.05) * 0.06 };
-  const t = smooth((f - 290) / 30);
+  const t = smooth((f - 100) / 20);
   const pose = mixPose(lookUp, FLOOR_SIT, t);
   const drop = lerp(legDrop(STAND.lHip, STAND.lKnee), 0.1, t);
   return { pose, pos: [WAIT_POS[0], drop, WAIT_POS[2]] as [number, number, number], facing: -0.35 * t };
@@ -145,16 +145,22 @@ const Rig: React.FC<{ frame: number }> = ({ frame }) => {
     const followRocket = smooth((frame - G_END) / 30);
     const fx = lerp(r.pos[0], tip.x - 0.6, followRocket);
     const fy = lerp(r.pos[1], tip.y - 0.8, followRocket);
-    const reveal = smooth((frame - R_END + 10) / (REVEAL_END - R_END + 10));
-    const intro = sampleNum([[0, 0.6], [G_START + 30, 0]], frame); // starts a bit wider to show both
+    const reveal = smooth((frame - R_END + 4) / (REVEAL_END - R_END + 4));
+    const intro = sampleNum([[0, 0.6], [G_START + 14, 0]], frame); // starts a bit wider to show both
     const tx = lerp(lerp(fx, -0.9, intro), 5.2, reveal);
     const ty = lerp(lerp(fy + 0.3, 0.9, intro), 6.3, reveal);
     const dist = lerp(lerp(12 + followRocket * 4, 15, intro), 42, reveal);
+    let shake = 0;
+    for (const d of [...DIP_FRAMES, Math.round(G_END)]) {
+      const k = frame - d;
+      if (k >= 0 && k < 14) shake += Math.exp(-k / 4) * Math.sin(k * 2.6) * 0.18;
+    }
     const dir = { x: -0.3, y: 0.2, z: 0.93 };
     cam.fov = 38;
     cam.aspect = size.width / size.height;
     cam.position.set(tx + dir.x * dist, ty + dir.y * dist, dir.z * dist);
-    cam.lookAt(tx, ty, 0);
+    cam.position.y += shake;
+    cam.lookAt(tx, ty + shake * 0.5, 0);
     cam.updateProjectionMatrix();
   }, [camera, frame, size]);
   return null;
@@ -162,8 +168,8 @@ const Rig: React.FC<{ frame: number }> = ({ frame }) => {
 
 const Flash: React.FC<{ text: string; at: number; color?: string; size?: number }> = ({ text, at, color = "#ff3b30", size = 64 }) => {
   const frame = useCurrentFrame();
-  const o = interpolate(frame, [at, at + 5, at + 34, at + 44], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const s = interpolate(frame, [at, at + 8], [1.25, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const o = interpolate(frame, [at, at + 3, at + 18, at + 24], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const s = interpolate(frame, [at, at + 6], [1.4, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill style={{ alignItems: "center", paddingTop: 400 }}>
       <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: size, letterSpacing: 10, color, opacity: o, transform: `scale(${s})` }}>
@@ -199,17 +205,17 @@ export const GrowthArrow: React.FC<{ handle: string }> = ({ handle }) => {
         </MirrorStage>
       </ThreeCanvas>
 
-      <Tag text="BUILDING" sub={`GROWTH +${growth}%`} x={90} y={470} align="right" from={70} to={tagsOut} color="#ff6b61" />
-      <Tag text="WAITING" sub="GROWTH +0%" x={90} y={1330} from={76} to={tagsOut} />
+      <Tag text="BUILDING" sub={`GROWTH +${growth}%`} x={90} y={470} align="right" from={G_START + 30} to={tagsOut} color="#ff6b61" />
+      <Tag text="WAITING" sub="GROWTH +0%" x={90} y={1330} from={G_START + 34} to={tagsOut} />
 
-      <Statement lines={["Everyone wants growth.", "Nobody wants the dips."]} from={4} to={92} top={300} size={74} highlight={1} />
+      <Statement lines={["Everyone wants growth.", "Nobody wants the dips."]} from={0} to={G_START + 30} top={300} size={74} highlight={1} />
       <Flash text="REJECTED" at={DIP_FRAMES[0]} />
       <Flash text="FAILED" at={DIP_FRAMES[1]} />
       <Flash text="STARTED OVER" at={DIP_FRAMES[2]} size={56} />
       <Flash text="BREAKTHROUGH" at={Math.round(G_END) + 4} color="#ffffff" size={60} />
       <Statement
         lines={["Growth isn't a straight line.", "It's a line that doesn't stop."]}
-        from={REVEAL_END - 30}
+        from={REVEAL_END - 20}
         to={ARROW_DURATION + 30}
         top={250}
         size={64}
