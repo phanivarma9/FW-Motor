@@ -6,3 +6,4 @@ dist
 # Ignore the output video from Git but not videos you import into src/.
 out
 previews/
+public/audio/police-vo/phrases/
