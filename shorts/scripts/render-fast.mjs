@@ -52,8 +52,14 @@ await Promise.all(
   }),
 );
 // audio track for the full composition
-const audio = path.join(tmp, "audio.wav");
-await renderMedia({ serveUrl, composition, codec: "wav", outputLocation: audio, browserExecutable, chromiumOptions, overwrite: true, frameRange: [f0, f1] });
+// audio: a pre-mixed master (AUDIO=public/audio/x.wav) is instant; otherwise let Remotion collect it
+let audio = path.join(tmp, "audio.wav");
+if (process.env.AUDIO) {
+  const fps = composition.fps;
+  execFileSync("ffmpeg", ["-v", "error", "-y", "-ss", String(f0 / fps), "-t", String(total / fps), "-i", process.env.AUDIO, audio]);
+} else {
+  await renderMedia({ serveUrl, composition, codec: "wav", outputLocation: audio, browserExecutable, chromiumOptions, overwrite: true, frameRange: [f0, f1], timeoutInMilliseconds: 240000 });
+}
 fs.writeFileSync(path.join(tmp, "list.txt"), parts.map((p) => `file '${p}'`).join("\n"));
 const final = `out/${name}.mp4`;
 execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", path.join(tmp, "list.txt"), "-i", audio,

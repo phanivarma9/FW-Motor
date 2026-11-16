@@ -7,7 +7,6 @@ import {
   continueRender,
   delayRender,
   interpolate,
-  Sequence,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -363,12 +362,13 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
   const inRanks = frame >= INTRO && frame < RANKS_END;
   const outStart = RANKS_END;
   // cinematic motion blur only where the camera moves fast (keeps render time sane)
-  const needsBlur = frame < INTRO + 2 || (inRanks && k > 0 && t < WHIP + 3) || (frame >= outStart && frame < outStart + 32);
+  const atCut = CUTS.some((c) => frame >= c && frame < c + 2); // never blend across a hard cut
+  const needsBlur = (frame < INTRO + 2 && !atCut) || (inRanks && k > 0 && t < WHIP + 3) || (frame >= outStart && frame < outStart + 32);
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       {needsBlur ? (
-        <CameraMotionBlur samples={4} shutterAngle={180}>
+        <CameraMotionBlur samples={5} shutterAngle={110}>
           <Scene3D />
         </CameraMotionBlur>
       ) : (
@@ -475,15 +475,8 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
           <rect width="100%" height="100%" filter="url(#grain)" />
         </svg>
       </AbsoluteFill>
-      <Audio src={staticFile("audio/police.wav")} volume={0.55} />
-      {TIMING.voice.map((_, i) => {
-        const from = i === 0 ? 4 : i <= RANKS.length ? STARTS[i - 1] + 6 : RANKS_END + 8;
-        return (
-          <Sequence key={i} from={from} layout="none">
-            <Audio src={staticFile(`audio/police-vo/line${String(i).padStart(2, "0")}.wav`)} volume={1} />
-          </Sequence>
-        );
-      })}
+      {/* single master track: music + SFX + Tarun voice, mixed by scripts/audio_police.py */}
+      <Audio src={staticFile("audio/police-mix.wav")} />
     </AbsoluteFill>
   );
 };

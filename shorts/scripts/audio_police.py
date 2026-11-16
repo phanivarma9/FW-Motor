@@ -65,5 +65,17 @@ for k in range(N):
 o = END / FPS
 m.add(o, whoosh(0.8), 0.6)
 m.add(o + 0.2, chord([62, 65, 69, 74], 3.5, 0.06))
-m.save("public/audio/police.wav")
+# ---- voice: Tarun lines at the same offsets as the video (music bed ducked to 55%) ----
+import wave as _w
+m.L *= 0.55; m.R *= 0.55
+for i in range(len(T["voice"])):
+    fr = 4 if i == 0 else (STARTS[i - 1] + 6 if i <= N else END + 8)
+    with _w.open(f"public/audio/police-vo/line{i:02d}.wav") as w:
+        v = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float64) / 32767
+        if w.getnchannels() == 2: v = v[::2]
+        sr = w.getframerate()
+    if sr != SR:
+        v = np.interp(np.arange(int(len(v) * SR / sr)) * sr / SR, np.arange(len(v)), v)
+    m.add(fr / FPS, v, 1.0)
+m.save("public/audio/police-mix.wav", reverb=False)
 print("ok", round(DUR, 2))
