@@ -3,8 +3,12 @@ import sys, numpy as np
 sys.path.insert(0, "scripts")
 from sfx import *
 
-FPS = 30; INTRO = 84; PER = 126; N = 13; OUTRO = 96
-DUR = (INTRO + N * PER + OUTRO) / FPS
+import json
+T = json.load(open("src/videos/police-timing.json"))
+FPS = 30; INTRO = T["intro"]; LENS = T["ranks"]; N = len(LENS); OUTRO = T["outro"]
+STARTS = [INTRO + sum(LENS[:k]) for k in range(N)]
+END = INTRO + sum(LENS)
+DUR = (END + OUTRO) / FPS
 m = Mix(DUR)
 
 # --- driving beat, 100 BPM (0.6 s), cinematic-trap feel ---
@@ -34,7 +38,7 @@ m.add(INTRO / FPS - 0.05, boom(), 0.7)
 
 # per-rank: whoosh on the camera whip, metallic clink when the insignia pops
 for k in range(N):
-    s = (INTRO + k * PER) / FPS
+    s = STARTS[k] / FPS
     if k > 0: m.add(s - 0.08, whoosh(0.5), 0.55)
     clk = tt(0.9)
     clink = sum(np.sin(2*np.pi*f*clk) * np.exp(-clk * d) for f, d in ((2100, 9), (3150, 12), (4400, 16))) * 0.12
@@ -42,7 +46,7 @@ for k in range(N):
     # salute stomp
     m.add(s + 16 / FPS, thud(), 0.35)
 # outro
-o = (INTRO + N * PER) / FPS
+o = END / FPS
 m.add(o, whoosh(0.8), 0.6)
 m.add(o + 0.2, chord([62, 65, 69, 74], 3.5, 0.06))
 m.save("public/audio/police.wav")

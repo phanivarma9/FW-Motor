@@ -6,6 +6,7 @@ import {
   continueRender,
   delayRender,
   interpolate,
+  Sequence,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -19,6 +20,7 @@ import { Officer, OFFICER_HEIGHT } from "../lib/Officer";
 import { Insignia, InsigniaItem } from "../lib/Insignia";
 import { smooth } from "../lib/rig";
 import { MONO } from "../lib/Hud";
+import TIMING from "./police-timing.json";
 
 const poppins = loadPoppins("normal", { weights: ["700", "800"], subsets: ["latin"] });
 const telugu = loadTelugu("normal", { weights: ["700", "800"], subsets: ["telugu", "latin"] });
@@ -42,10 +44,13 @@ export const RANKS: Rank[] = [
 ];
 
 export const POLICE_FPS = 30;
-export const INTRO = 84;
-export const PER = 126; // 4.2 s per rank
-export const OUTRO = 96;
-export const POLICE_DURATION = INTRO + RANKS.length * PER + OUTRO;
+// Segment lengths come from the generated voiceover (scripts/vo_police.py) so speech is never cut.
+export const INTRO: number = TIMING.intro;
+const LENS: number[] = TIMING.ranks;
+export const STARTS: number[] = LENS.map((_, k) => INTRO + LENS.slice(0, k).reduce((a, b) => a + b, 0));
+export const RANKS_END: number = INTRO + LENS.reduce((a, b) => a + b, 0);
+export const OUTRO: number = TIMING.outro;
+export const POLICE_DURATION = RANKS_END + OUTRO;
 const WHIP = 12;
 
 const SPACING = 2.35;
@@ -55,8 +60,9 @@ const pedH = (i: number) => 0.85 + i * 0.16;
 
 /** current focused rank + local frame inside its segment */
 const focusAt = (f: number) => {
-  const k = Math.max(0, Math.min(RANKS.length - 1, Math.floor((f - INTRO) / PER)));
-  return { k, t: f - INTRO - k * PER };
+  let k = 0;
+  for (let i = 0; i < STARTS.length; i++) if (f >= STARTS[i]) k = i;
+  return { k, t: f - STARTS[k] };
 };
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -163,7 +169,7 @@ const Pedestal: React.FC<{ i: number; label: THREE.Texture | null; glow: number 
 const camAt = (f: number) => {
   // per-rank framing
   const frame = (k: number, t: number) => {
-    const push = smooth(t / PER) * 0.6;
+    const push = smooth(t / LENS[k]) * 0.6;
     const x = pedX(k);
     const h = pedH(k);
     return {
@@ -174,7 +180,7 @@ const camAt = (f: number) => {
   const { k, t } = focusAt(f);
   let cur = frame(k, Math.max(0, t));
   if (k > 0 && t < WHIP) {
-    const prev = frame(k - 1, PER);
+    const prev = frame(k - 1, LENS[k - 1]);
     const e = ease(t / WHIP);
     cur = { pos: prev.pos.clone().lerp(cur.pos, e), look: prev.look.clone().lerp(cur.look, e) };
   }
@@ -191,10 +197,10 @@ const camAt = (f: number) => {
     return { pos: intro.pos.clone().lerp(target.pos, e), look: intro.look.clone().lerp(target.look, e) };
   }
   // outro: pull back to show the whole ladder
-  const outStart = INTRO + RANKS.length * PER;
+  const outStart = RANKS_END;
   if (f >= outStart) {
     const e = ease(Math.min(1, (f - outStart) / 30));
-    const last = frame(RANKS.length - 1, PER);
+    const last = frame(RANKS.length - 1, LENS[RANKS.length - 1]);
     const wide = {
       pos: new THREE.Vector3(pedX(RANKS.length - 1) + 3.2, 4.4, 9.5),
       look: new THREE.Vector3(pedX(8), 2.6, 0),
@@ -219,38 +225,13 @@ const Rig: React.FC<{ frame: number }> = ({ frame }) => {
 };
 
 // ---------- overlays ----------
-const TeluguCaption: React.FC<{ text: string; from: number; to: number }> = ({ text, from, to }) => {
-  const frame = useCurrentFrame();
-  const o = interpolate(frame, [from, from + 6, to - 6, to], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const y = interpolate(frame, [from, from + 8], [20, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  return (
-    <AbsoluteFill style={{ alignItems: "center", paddingTop: 215, paddingLeft: 60, paddingRight: 60 }}>
-      <div
-        style={{
-          fontFamily: telugu.fontFamily,
-          fontWeight: 800,
-          fontSize: 46,
-          lineHeight: 1.3,
-          color: "#fff",
-          textAlign: "center",
-          opacity: o,
-          transform: `translateY(${y}px)`,
-          textShadow: "0 3px 18px rgba(0,0,0,0.9)",
-        }}
-      >
-        {text}
-      </div>
-    </AbsoluteFill>
-  );
-};
-
 export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const labels = useLabelTextures();
   const { k, t } = focusAt(frame);
-  const inRanks = frame >= INTRO && frame < INTRO + RANKS.length * PER;
-  const outStart = INTRO + RANKS.length * PER;
+  const inRanks = frame >= INTRO && frame < RANKS_END;
+  const outStart = RANKS_END;
   const focusX = camAt(frame).look.x;
 
   return (
@@ -272,7 +253,7 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
         {RANKS.map((r, i) => {
           const focused = inRanks && i === k;
           const lt = focused ? t : 999;
-          const salute = focused ? smooth((lt - 16) / 10) * (1 - smooth((lt - 84) / 12)) : 0;
+          const salute = focused ? smooth((lt - 16) / 10) * (1 - smooth((lt - (LENS[i] - 30)) / 12)) : 0;
           const glow = focused ? smooth(lt / 10) : frame >= outStart ? 0.5 : 0;
           // insignia: pop + spin when its rank comes up, gentle sway otherwise
           const pop = focused ? 1 + 0.35 * Math.sin(Math.min(1, lt / 14) * Math.PI) : 1;
@@ -317,9 +298,7 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
           <div style={{ fontFamily: poppins.fontFamily, fontWeight: 800, fontSize: 92, color: "#ffc72c", letterSpacing: -1, opacity: interpolate(frame, [0, 6, INTRO - 6, INTRO], [0, 1, 1, 0]) }}>
             POLICE RANKS
           </div>
-          <div style={{ fontFamily: telugu.fontFamily, fontWeight: 800, fontSize: 60, color: "#fff", marginTop: 10, opacity: interpolate(frame, [6, 14, INTRO - 6, INTRO], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>
-            ఎవరికి ఎంత పవర్?
-          </div>
+
         </AbsoluteFill>
       ) : null}
 
@@ -330,20 +309,18 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
         </div>
       ) : null}
 
-      {RANKS.map((r, i) => (
-        <TeluguCaption key={r.abbr} text={r.te} from={INTRO + i * PER + 10} to={INTRO + (i + 1) * PER} />
-      ))}
 
-      {frame >= outStart - 4 ? (
-        <AbsoluteFill style={{ alignItems: "center", paddingTop: 260, paddingLeft: 80, paddingRight: 80 }}>
-          <div style={{ fontFamily: telugu.fontFamily, fontWeight: 800, fontSize: 66, color: "#fff", textAlign: "center", lineHeight: 1.3, opacity: interpolate(frame, [outStart + 10, outStart + 22], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>
-            మీకు ఏ ర్యాంక్ అంటే ఇష్టం?
-            <div style={{ color: "#ffc72c", fontSize: 54 }}>కామెంట్ చేయండి</div>
-          </div>
-        </AbsoluteFill>
-      ) : null}
 
-      <Audio src={staticFile("audio/police.wav")} />
+
+      <Audio src={staticFile("audio/police.wav")} volume={0.55} />
+      {TIMING.voice.map((_, i) => {
+        const from = i === 0 ? 4 : i <= RANKS.length ? STARTS[i - 1] + 6 : RANKS_END + 8;
+        return (
+          <Sequence key={i} from={from} layout="none">
+            <Audio src={staticFile(`audio/police-vo/line${String(i).padStart(2, "0")}.wav`)} volume={1} />
+          </Sequence>
+        );
+      })}
     </AbsoluteFill>
   );
 };

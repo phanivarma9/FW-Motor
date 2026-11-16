@@ -113,73 +113,145 @@ const Arm: React.FC<{ side: 1 | -1; raise: number; elbow: number; forward: numbe
   </group>
 );
 
+const shapeGeom = (pts: [number, number][], depth: number, bevel = 0.004) => {
+  const sh = new THREE.Shape();
+  pts.forEach(([x, y], i) => (i === 0 ? sh.moveTo(x, y) : sh.lineTo(x, y)));
+  sh.closePath();
+  const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 8 });
+  g.translate(0, 0, -depth / 2);
+  return g;
+};
+
+// Classic thick police moustache: full in the middle, tapering and drooping at the ends.
+const halfMoustache: [number, number][] = [
+  [0.0, 0.013], [0.012, 0.016], [0.026, 0.015], [0.04, 0.01], [0.052, 0.0], [0.06, -0.014],
+  [0.058, -0.02], [0.05, -0.012], [0.038, -0.006], [0.024, -0.005], [0.01, -0.007], [0.0, -0.004],
+];
+const moustachePts: [number, number][] = [
+  ...halfMoustache,
+  ...halfMoustache.slice(1, -1).reverse().map(([x, y]) => [-x, y] as [number, number]),
+];
+// tapered, slightly arched eyebrow (inner end at x=0)
+const browPts: [number, number][] = [
+  [0, -0.008], [0.02, -0.004], [0.04, -0.003], [0.055, -0.008], [0.052, -0.002], [0.038, 0.005], [0.018, 0.008], [0, 0.007],
+];
+
 const Face: React.FC<{ blink: number; smile: number; brows: number; look: number }> = ({ blink, smile, brows, look }) => {
-  const mouthCurve = useMemo(() => {
-    // smile curve (arc), flattened
+  const g = useMemo(
+    () => ({
+      moustache: shapeGeom(moustachePts, 0.014),
+      brow: shapeGeom(browPts, 0.008, 0.003),
+    }),
+    [],
+  );
+  const mouth = useMemo(() => {
     const pts: THREE.Vector3[] = [];
     for (let i = 0; i <= 12; i++) {
       const u = i / 12 - 0.5;
-      pts.push(new THREE.Vector3(u * 0.075, u * u * (0.03 + smile * 0.09), 0));
+      pts.push(new THREE.Vector3(u * 0.062, u * u * (0.025 + smile * 0.08), 0));
     }
-    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.0065, 6, false);
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.0045, 6, false);
   }, [smile]);
   const fz = HEAD_R * 0.93;
-  const eyeY = 0.012;
-  const browY = 0.055 + brows * 0.018;
+  const eyeY = 0.016;
   return (
     <group>
+      {/* brow ridge / cheek shading for structure */}
+      <mesh position={[0, 0.042, fz - 0.03]} scale={[1.7, 0.45, 0.6]}>
+        <sphereGeometry args={[0.05, 20, 12]} />
+        <Skin />
+      </mesh>
+      {[1, -1].map((s) => (
+        <mesh key={`ck${s}`} position={[s * 0.058, -0.03, fz - 0.05]} scale={[1, 0.8, 0.6]}>
+          <sphereGeometry args={[0.04, 16, 12]} />
+          <Skin />
+        </mesh>
+      ))}
       {/* eyes */}
       {[1, -1].map((s) => (
-        <group key={s} position={[s * 0.047, eyeY, fz - 0.012]}>
-          <mesh scale={[1.25, 1, 0.6]}>
-            <sphereGeometry args={[0.02, 18, 14]} />
-            <meshStandardMaterial color="#f4f1ea" roughness={0.3} />
+        <group key={s} position={[s * 0.046, eyeY, fz - 0.008]}>
+          <mesh scale={[1.45, 0.82, 0.55]}>
+            <sphereGeometry args={[0.02, 20, 14]} />
+            <meshStandardMaterial color="#f2eee6" roughness={0.25} />
           </mesh>
-          <mesh position={[look * 0.006, 0, 0.011]}>
-            <sphereGeometry args={[0.0115, 14, 12]} />
-            <meshStandardMaterial color="#1e120b" roughness={0.15} />
+          <mesh position={[look * 0.006, -0.001, 0.0095]} scale={[1, 1, 0.5]}>
+            <sphereGeometry args={[0.0118, 18, 14]} />
+            <meshStandardMaterial color="#3a2414" roughness={0.2} />
           </mesh>
-          <mesh position={[look * 0.006 + 0.003, 0.004, 0.02]}>
-            <sphereGeometry args={[0.0025, 8, 6]} />
+          <mesh position={[look * 0.006, -0.001, 0.0135]} scale={[1, 1, 0.4]}>
+            <sphereGeometry args={[0.0062, 12, 10]} />
+            <meshStandardMaterial color="#050302" roughness={0.1} />
+          </mesh>
+          <mesh position={[look * 0.006 + 0.004, 0.004, 0.0165]}>
+            <sphereGeometry args={[0.0024, 8, 6]} />
             <meshBasicMaterial color="#ffffff" />
           </mesh>
-          {/* eyelid (blink) */}
-          <mesh position={[0, 0.02 - blink * 0.02, 0.004]} scale={[1.35, 0.25 + blink * 0.95, 0.75]}>
-            <sphereGeometry args={[0.02, 16, 10]} />
-            <Skin color={UNIFORM.skinShade} />
+          {/* upper lid with lash line, closes for blink */}
+          <group position={[0, 0.0, 0.002]} rotation={[-0.75 + blink * 2.0, 0, 0]}>
+            <mesh scale={[1.5, 0.9, 0.66]}>
+              <sphereGeometry args={[0.0205, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+              <Skin color={UNIFORM.skinShade} />
+            </mesh>
+          </group>
+          <mesh position={[0, 0.0125 - blink * 0.014, 0.006]} rotation={[0, 0, 0]} scale={[1, 1, 1]}>
+            <boxGeometry args={[0.058, 0.0035, 0.006]} />
+            <meshStandardMaterial color="#120a06" roughness={0.6} />
+          </mesh>
+          {/* lower lid */}
+          <mesh position={[0, -0.0145, 0.004]} scale={[1.5, 0.35, 0.6]}>
+            <sphereGeometry args={[0.02, 16, 8]} />
+            <Skin />
           </mesh>
           {/* eyebrow */}
-          <mesh position={[s * 0.004, browY - eyeY, 0.012]} rotation={[0, 0, s * (-0.06 - brows * 0.06)]}>
-            <boxGeometry args={[0.048, 0.011, 0.012]} />
-            <meshStandardMaterial color={UNIFORM.hair} roughness={0.9} />
+          <mesh geometry={g.brow} position={[s * 0.026 * -1 + s * 0.0, 0.034 + brows * 0.012, 0.012]} scale={[s, 1.45, 1]} rotation={[-0.15, 0, 0]}>
+            <meshStandardMaterial color={UNIFORM.hair} roughness={0.95} />
           </mesh>
         </group>
       ))}
-      {/* nose */}
-      <mesh position={[0, -0.022, fz + 0.012]} rotation={[0.35, 0, 0]} scale={[0.8, 1.25, 1]}>
-        <coneGeometry args={[0.022, 0.06, 16]} />
+      {/* nose: bridge + tip + nostrils */}
+      <mesh position={[0, -0.004, fz + 0.004]} rotation={[0.18, 0, 0]} scale={[0.55, 1, 0.7]}>
+        <capsuleGeometry args={[0.014, 0.045, 6, 12]} />
         <Skin />
       </mesh>
-      <mesh position={[0, -0.045, fz + 0.016]}>
-        <sphereGeometry args={[0.02, 14, 12]} />
+      <mesh position={[0, -0.034, fz + 0.016]} scale={[1.1, 0.9, 0.95]}>
+        <sphereGeometry args={[0.018, 16, 12]} />
         <Skin />
       </mesh>
-      {/* moustache */}
       {[1, -1].map((s) => (
-        <mesh key={s} position={[s * 0.019, -0.07, fz + 0.002]} rotation={[0.1, 0, s * (-0.32 - smile * 0.12)]} scale={[1, 0.42, 0.5]}>
-          <capsuleGeometry args={[0.014, 0.034, 6, 10]} />
-          <meshStandardMaterial color={UNIFORM.hair} roughness={0.85} />
+        <mesh key={`n${s}`} position={[s * 0.017, -0.04, fz + 0.006]} scale={[1, 0.8, 0.9]}>
+          <sphereGeometry args={[0.012, 12, 10]} />
+          <Skin />
         </mesh>
       ))}
-      {/* mouth */}
-      <mesh geometry={mouthCurve} position={[0, -0.093, fz - 0.006]}>
-        <meshStandardMaterial color="#4a1f14" roughness={0.6} />
+      {/* moustache */}
+      <mesh geometry={g.moustache} position={[0, -0.06, fz + 0.006]} rotation={[0.25, 0, 0]} scale={[1, 1 + smile * 0.06, 1]}>
+        <meshStandardMaterial color="#120c09" roughness={0.92} />
+      </mesh>
+      {/* lips */}
+      <mesh geometry={mouth} position={[0, -0.084, fz - 0.002]}>
+        <meshStandardMaterial color="#3a160d" roughness={0.6} />
+      </mesh>
+      <mesh position={[0, -0.093, fz - 0.006]} scale={[1.6, 0.55, 0.7]}>
+        <sphereGeometry args={[0.014, 14, 10]} />
+        <Skin color="#8a4b35" />
+      </mesh>
+      {/* chin */}
+      <mesh position={[0, -0.112, fz - 0.045]} scale={[1.3, 0.75, 0.7]}>
+        <sphereGeometry args={[0.032, 16, 12]} />
+        <Skin />
       </mesh>
       {/* ears */}
       {[1, -1].map((s) => (
-        <mesh key={s} position={[s * HEAD_R * 0.97, 0, -0.005]} scale={[0.45, 1, 0.75]}>
+        <mesh key={`e${s}`} position={[s * HEAD_R * 0.97, 0, -0.005]} scale={[0.45, 1, 0.75]}>
           <sphereGeometry args={[0.035, 14, 12]} />
           <Skin />
+        </mesh>
+      ))}
+      {/* sideburns */}
+      {[1, -1].map((s) => (
+        <mesh key={`sb${s}`} position={[s * HEAD_R * 0.9, 0.02, 0.03]} scale={[0.35, 1, 0.6]}>
+          <sphereGeometry args={[0.03, 12, 10]} />
+          <meshStandardMaterial color={UNIFORM.hair} roughness={0.95} />
         </mesh>
       ))}
     </group>
