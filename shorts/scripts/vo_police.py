@@ -24,7 +24,7 @@ durs = []
 for i, text in enumerate(LINES):
     out = f"public/audio/police-vo/line{i:02d}.wav"
     if not os.path.exists(out):
-        body = json.dumps({"text": text, "target_language_code": "te-IN", "speaker": "tarun", "model": "bulbul:v3", "pace": 1.15}).encode()
+        body = json.dumps({"text": text, "target_language_code": "te-IN", "speaker": "tarun", "model": "bulbul:v3", "pace": 1.0}).encode()
         req = urllib.request.Request("https://api.sarvam.ai/text-to-speech", data=body, method="POST",
             headers={"Content-Type": "application/json", "api-subscription-key": "proxy-injected"})
         d = json.load(urllib.request.urlopen(req, timeout=60))
@@ -39,7 +39,7 @@ for i, text in enumerate(LINES):
         durs.append(w.getnframes() / w.getframerate())
     print(i, round(durs[-1], 2))
 intro = max(round((durs[0] + 0.35) * FPS), 84)
-ranks = [max(round((d + 0.55) * FPS), 96) for d in durs[1:-1]]
+ranks = [max(round((d + 0.8) * FPS), 105) for d in durs[1:-1]]
 outro = round((durs[-1] + 1.2) * FPS)
 json.dump({"intro": intro, "ranks": ranks, "outro": outro, "voice": [round(d, 3) for d in durs]},
           open("src/videos/police-timing.json", "w"), indent=1)
