@@ -282,7 +282,18 @@ export const PoliceRanks: React.FC<{ handle: string }> = ({ handle }) => {
           return (
             <group key={r.abbr}>
               <Pedestal i={i} label={labels ? labels[i] : null} glow={glow} />
-              <Officer position={[pedX(i), h, 0]} salute={salute} breathe={Math.sin((frame + i * 11) * 0.08)} />
+              <Officer
+                position={[pedX(i), h, 0]}
+                salute={salute}
+                breathe={Math.sin((frame + i * 11) * 0.08)}
+                blink={(() => {
+                  const c = (frame + i * 23) % 97;
+                  return c < 3 ? c / 3 : c < 6 ? 1 - (c - 3) / 3 : 0;
+                })()}
+                brows={salute * 0.8}
+                smile={focused ? smooth((lt - 70) / 14) : 0.15}
+                look={focused ? 0 : Math.sin((frame + i * 31) * 0.02) * 0.6}
+              />
               <group
                 position={[pedX(i), h + OFFICER_HEIGHT + 0.32 + Math.sin((frame + i * 9) * 0.07) * 0.04, 0]}
                 rotation={[0, sway + spin, 0]}

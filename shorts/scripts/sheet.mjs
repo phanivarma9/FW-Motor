@@ -14,7 +14,7 @@ const composition = await selectComposition({ serveUrl, id: comp, browserExecuta
 const files = [];
 for (const f of frames) {
   const file = path.join(out, `${f}.png`);
-  await renderStill({ serveUrl, composition, frame: Number(f), output: file, scale: 0.33, browserExecutable, chromiumOptions, overwrite: true });
+  await renderStill({ serveUrl, composition, frame: Number(f), output: file, scale: Number(process.env.SCALE || 0.33), browserExecutable, chromiumOptions, overwrite: true });
   files.push(file);
 }
 execFileSync("ffmpeg", ["-v", "error", "-y", ...files.flatMap((f) => ["-i", f]), "-filter_complex", files.map((_, i) => `[${i}:v]`).join("") + `hstack=inputs=${files.length}`, path.join(out, "sheet.png")]);

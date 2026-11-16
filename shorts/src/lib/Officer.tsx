@@ -1,151 +1,326 @@
-import React from "react";
+import React, { useMemo } from "react";
+import * as THREE from "three";
 
-// Stylized police officer built from the same glossy-capsule language as the pictogram figure,
-// but designed to be seen from the FRONT. Local axes: +Z is the direction the officer faces.
+// Stylized-realistic police officer, seen from the FRONT (+Z faces the camera).
+// Built from primitives so it renders anywhere; expressions are driven by props (frame-based).
 
 export const UNIFORM = {
-  khaki: "#c7a676",
-  khakiDark: "#a88a5d",
-  skin: "#f4f1ec",
-  belt: "#6b3f22",
-  shoe: "#141414",
+  khaki: "#c9aa7c",
+  khakiShade: "#b39363",
+  skin: "#a8704a",
+  skinShade: "#8d5a3a",
+  hair: "#1b1410",
+  belt: "#6a3a1c",
+  shoe: "#0f0f0f",
   gold: "#e8b93c",
   silver: "#d9dde3",
+  lanyard: "#1d2a52",
 };
 
-const Gloss: React.FC<{ color: string; rough?: number; metal?: number }> = ({ color, rough = 0.42, metal = 0 }) => (
-  <meshPhysicalMaterial color={color} roughness={rough} metalness={metal} clearcoat={0.6} clearcoatRoughness={0.35} />
+const Cloth: React.FC<{ color: string }> = ({ color }) => <meshStandardMaterial color={color} roughness={0.78} metalness={0} />;
+const Skin: React.FC<{ color?: string }> = ({ color = UNIFORM.skin }) => (
+  <meshPhysicalMaterial color={color} roughness={0.55} clearcoat={0.15} sheen={0.3} sheenColor="#ffb08a" />
+);
+const Shiny: React.FC<{ color: string; metal?: number; rough?: number }> = ({ color, metal = 0, rough = 0.3 }) => (
+  <meshPhysicalMaterial color={color} metalness={metal} roughness={rough} clearcoat={0.6} />
 );
 
-const Capsule: React.FC<{ r: number; len: number; color: string; y?: number }> = ({ r, len, color, y = -len / 2 }) => (
-  <mesh position={[0, y, 0]} castShadow>
-    <capsuleGeometry args={[r, len, 6, 16]} />
-    <Gloss color={color} />
-  </mesh>
+// tapered limb segment hanging down from the origin
+const Seg: React.FC<{ len: number; r0: number; r1: number; children?: React.ReactNode; mat: React.ReactNode }> = ({ len, r0, r1, mat }) => (
+  <>
+    <mesh position={[0, -len / 2, 0]} castShadow>
+      <cylinderGeometry args={[r0, r1, len, 20]} />
+      {mat}
+    </mesh>
+    <mesh position={[0, -len, 0]} castShadow>
+      <sphereGeometry args={[r1, 16, 12]} />
+      {mat}
+    </mesh>
+  </>
 );
 
 type Props = {
-  position: [number, number, number]; // feet position (on the pedestal top)
+  position: [number, number, number]; // feet on the ground
   rotationY?: number;
   salute?: number; // 0..1
-  breathe?: number; // small idle motion value
+  breathe?: number; // -1..1 idle
+  blink?: number; // 0 open .. 1 closed
+  smile?: number; // 0..1
+  brows?: number; // 0..1 raised
+  look?: number; // eye direction left/right -1..1
 };
 
-const THIGH = 0.46;
-const SHIN = 0.46;
-const LEG_R = 0.075;
-const HIP_X = 0.1;
-const TORSO = 0.5;
-const TORSO_R = 0.135;
-const SHOULDER_X = 0.215;
-const UARM = 0.31;
-const FARM = 0.3;
-const ARM_R = 0.062;
-const HEAD_R = 0.19;
-const PELVIS_Y = THIGH + SHIN + 0.06;
+// proportions (metres-ish, total ~1.95 incl. cap)
+const THIGH = 0.45;
+const SHIN = 0.44;
+const HIP_X = 0.105;
+const PELVIS_Y = THIGH + SHIN + 0.07;
+const TORSO = 0.56;
+const SHOULDER_X = 0.235;
+const UARM = 0.3;
+const FARM = 0.27;
+const HEAD_R = 0.135;
+const NECK = 0.09;
+const HEAD_SCALE = 1.2;
 
 const Leg: React.FC<{ x: number }> = ({ x }) => (
   <group position={[x, 0, 0]}>
-    <Capsule r={LEG_R} len={THIGH} color={UNIFORM.khaki} />
+    <Seg len={THIGH} r0={0.092} r1={0.07} mat={<Cloth color={UNIFORM.khaki} />} />
     <group position={[0, -THIGH, 0]}>
-      <Capsule r={LEG_R * 0.95} len={SHIN} color={UNIFORM.khaki} />
-      {/* shoe */}
-      <mesh position={[0, -SHIN - 0.03, 0.06]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <capsuleGeometry args={[0.065, 0.14, 6, 12]} />
-        <Gloss color={UNIFORM.shoe} rough={0.25} />
+      <Seg len={SHIN} r0={0.068} r1={0.056} mat={<Cloth color={UNIFORM.khaki} />} />
+      {/* trouser hem + shoe */}
+      <mesh position={[0, -SHIN + 0.01, 0]}>
+        <cylinderGeometry args={[0.062, 0.064, 0.04, 18]} />
+        <Cloth color={UNIFORM.khakiShade} />
+      </mesh>
+      <mesh position={[0, -SHIN - 0.035, 0.045]} scale={[0.85, 0.55, 1.6]} castShadow>
+        <sphereGeometry args={[0.07, 20, 14]} />
+        <Shiny color={UNIFORM.shoe} rough={0.18} />
       </mesh>
     </group>
   </group>
 );
 
-/** side: +1 = officer's left (+X), -1 = right (-X). */
-const Arm: React.FC<{ side: 1 | -1; raise: number; elbow: number; forward: number; swing: number }> = ({
-  side,
-  raise,
-  elbow,
-  forward,
-  swing,
-}) => (
-  // raise: sideways lift (rad), elbow: forearm fold toward the head (rad), forward: tilt toward +Z
-  <group position={[side * SHOULDER_X, TORSO, 0]} rotation={[-forward + swing, 0, side * (0.1 + raise)]}>
-    <Capsule r={ARM_R} len={UARM} color={UNIFORM.khaki} />
-    {/* short sleeve cuff */}
-    <mesh position={[0, -UARM * 0.55, 0]} castShadow>
-      <cylinderGeometry args={[ARM_R * 1.25, ARM_R * 1.25, 0.06, 16]} />
-      <Gloss color={UNIFORM.khakiDark} />
+/** side +1 = officer's left (+X). raise: sideways lift, elbow: forearm fold toward head. */
+const Arm: React.FC<{ side: 1 | -1; raise: number; elbow: number; forward: number; watch?: boolean }> = ({ side, raise, elbow, forward, watch }) => (
+  <group position={[side * SHOULDER_X, TORSO - 0.06, 0]} rotation={[-forward, 0, side * (0.08 + raise)]}>
+    {/* short sleeve */}
+    <mesh position={[0, -0.09, 0]} castShadow>
+      <cylinderGeometry args={[0.072, 0.074, 0.18, 18]} />
+      <Cloth color={UNIFORM.khaki} />
     </mesh>
-    <group position={[0, -UARM, 0]} rotation={[-0.08, 0, side * elbow]}>
-      <Capsule r={ARM_R * 0.9} len={FARM} color={UNIFORM.skin} />
+    <mesh castShadow>
+      <sphereGeometry args={[0.074, 18, 14]} />
+      <Cloth color={UNIFORM.khaki} />
+    </mesh>
+    <group position={[0, -0.17, 0]}>
+      <Seg len={UARM - 0.17} r0={0.052} r1={0.048} mat={<Skin />} />
+    </group>
+    <group position={[0, -UARM, 0]} rotation={[-0.06, 0, side * elbow]}>
+      <Seg len={FARM} r0={0.047} r1={0.04} mat={<Skin />} />
+      {watch ? (
+        <mesh position={[0, -FARM + 0.04, 0]}>
+          <cylinderGeometry args={[0.046, 0.046, 0.03, 18]} />
+          <Shiny color="#151515" rough={0.25} />
+        </mesh>
+      ) : null}
+      {/* hand */}
+      <mesh position={[0, -FARM - 0.05, 0.005]} scale={[0.75, 1.15, 0.5]} castShadow>
+        <sphereGeometry args={[0.055, 18, 14]} />
+        <Skin />
+      </mesh>
     </group>
   </group>
 );
 
-export const Officer: React.FC<Props> = ({ position, rotationY = 0, salute = 0, breathe = 0 }) => {
+const Face: React.FC<{ blink: number; smile: number; brows: number; look: number }> = ({ blink, smile, brows, look }) => {
+  const mouthCurve = useMemo(() => {
+    // smile curve (arc), flattened
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 12; i++) {
+      const u = i / 12 - 0.5;
+      pts.push(new THREE.Vector3(u * 0.075, u * u * (0.03 + smile * 0.09), 0));
+    }
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.0065, 6, false);
+  }, [smile]);
+  const fz = HEAD_R * 0.93;
+  const eyeY = 0.012;
+  const browY = 0.055 + brows * 0.018;
+  return (
+    <group>
+      {/* eyes */}
+      {[1, -1].map((s) => (
+        <group key={s} position={[s * 0.047, eyeY, fz - 0.012]}>
+          <mesh scale={[1.25, 1, 0.6]}>
+            <sphereGeometry args={[0.02, 18, 14]} />
+            <meshStandardMaterial color="#f4f1ea" roughness={0.3} />
+          </mesh>
+          <mesh position={[look * 0.006, 0, 0.011]}>
+            <sphereGeometry args={[0.0115, 14, 12]} />
+            <meshStandardMaterial color="#1e120b" roughness={0.15} />
+          </mesh>
+          <mesh position={[look * 0.006 + 0.003, 0.004, 0.02]}>
+            <sphereGeometry args={[0.0025, 8, 6]} />
+            <meshBasicMaterial color="#ffffff" />
+          </mesh>
+          {/* eyelid (blink) */}
+          <mesh position={[0, 0.02 - blink * 0.02, 0.004]} scale={[1.35, 0.25 + blink * 0.95, 0.75]}>
+            <sphereGeometry args={[0.02, 16, 10]} />
+            <Skin color={UNIFORM.skinShade} />
+          </mesh>
+          {/* eyebrow */}
+          <mesh position={[s * 0.004, browY - eyeY, 0.012]} rotation={[0, 0, s * (-0.06 - brows * 0.06)]}>
+            <boxGeometry args={[0.048, 0.011, 0.012]} />
+            <meshStandardMaterial color={UNIFORM.hair} roughness={0.9} />
+          </mesh>
+        </group>
+      ))}
+      {/* nose */}
+      <mesh position={[0, -0.022, fz + 0.012]} rotation={[0.35, 0, 0]} scale={[0.8, 1.25, 1]}>
+        <coneGeometry args={[0.022, 0.06, 16]} />
+        <Skin />
+      </mesh>
+      <mesh position={[0, -0.045, fz + 0.016]}>
+        <sphereGeometry args={[0.02, 14, 12]} />
+        <Skin />
+      </mesh>
+      {/* moustache */}
+      {[1, -1].map((s) => (
+        <mesh key={s} position={[s * 0.019, -0.07, fz + 0.002]} rotation={[0.1, 0, s * (-0.32 - smile * 0.12)]} scale={[1, 0.42, 0.5]}>
+          <capsuleGeometry args={[0.014, 0.034, 6, 10]} />
+          <meshStandardMaterial color={UNIFORM.hair} roughness={0.85} />
+        </mesh>
+      ))}
+      {/* mouth */}
+      <mesh geometry={mouthCurve} position={[0, -0.093, fz - 0.006]}>
+        <meshStandardMaterial color="#4a1f14" roughness={0.6} />
+      </mesh>
+      {/* ears */}
+      {[1, -1].map((s) => (
+        <mesh key={s} position={[s * HEAD_R * 0.97, 0, -0.005]} scale={[0.45, 1, 0.75]}>
+          <sphereGeometry args={[0.035, 14, 12]} />
+          <Skin />
+        </mesh>
+      ))}
+    </group>
+  );
+};
+
+export const Officer: React.FC<Props> = ({ position, rotationY = 0, salute = 0, breathe = 0, blink = 0, smile = 0, brows = 0, look = 0 }) => {
   const s = salute;
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
       <group position={[0, PELVIS_Y, 0]}>
         <Leg x={HIP_X} />
         <Leg x={-HIP_X} />
-        <group rotation={[breathe * 0.02, 0, 0]}>
-          {/* torso / shirt */}
-          <mesh position={[0, TORSO / 2, 0]} castShadow>
-            <capsuleGeometry args={[TORSO_R, TORSO, 8, 20]} />
-            <Gloss color={UNIFORM.khaki} />
+        {/* hips / trousers seat */}
+        <mesh position={[0, 0.0, 0]} scale={[1, 1, 0.7]} castShadow>
+          <cylinderGeometry args={[0.185, 0.17, 0.14, 28]} />
+          <Cloth color={UNIFORM.khaki} />
+        </mesh>
+        <mesh position={[0, -0.06, 0]} scale={[1.6, 0.7, 1]}>
+          <sphereGeometry args={[0.085, 18, 12]} />
+          <Cloth color={UNIFORM.khaki} />
+        </mesh>
+        <group scale={[1, 1 + breathe * 0.006, 1]}>
+          {/* shirt torso: tapered, flattened front-back */}
+          <mesh position={[0, TORSO / 2 + 0.02, 0]} scale={[1, 1, 0.68]} castShadow>
+            <cylinderGeometry args={[0.215, 0.18, TORSO, 28]} />
+            <Cloth color={UNIFORM.khaki} />
           </mesh>
-          {/* hips */}
-          <mesh rotation={[0, 0, Math.PI / 2]} position={[0, 0.02, 0]} castShadow>
-            <capsuleGeometry args={[LEG_R * 1.15, HIP_X * 2, 6, 16]} />
-            <Gloss color={UNIFORM.khaki} />
+          <mesh position={[0, TORSO + 0.02, 0]} scale={[1, 0.45, 0.68]} castShadow>
+            <sphereGeometry args={[0.215, 28, 16]} />
+            <Cloth color={UNIFORM.khaki} />
           </mesh>
-          {/* belt + buckle */}
-          <mesh position={[0, 0.09, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <torusGeometry args={[TORSO_R * 1.02, 0.032, 10, 40]} />
-            <Gloss color={UNIFORM.belt} rough={0.3} />
+          {/* button placket */}
+          <mesh position={[0, TORSO / 2 + 0.03, 0.135]}>
+            <boxGeometry args={[0.035, TORSO - 0.06, 0.008]} />
+            <Cloth color={UNIFORM.khakiShade} />
           </mesh>
-          <mesh position={[0, 0.09, TORSO_R + 0.03]} castShadow>
-            <boxGeometry args={[0.1, 0.07, 0.02]} />
-            <Gloss color={UNIFORM.silver} rough={0.2} metal={0.8} />
-          </mesh>
-          {/* name plate + pocket flaps */}
-          <mesh position={[0.07, TORSO * 0.78, TORSO_R + 0.005]}>
-            <boxGeometry args={[0.09, 0.025, 0.01]} />
-            <Gloss color="#111" />
-          </mesh>
-          {/* shoulder epaulettes */}
-          {[1, -1].map((side) => (
-            <mesh key={side} position={[side * (SHOULDER_X - 0.06), TORSO + 0.05, 0]} castShadow>
-              <boxGeometry args={[0.15, 0.03, 0.09]} />
-              <Gloss color={UNIFORM.khakiDark} />
+          {[0.18, 0.3, 0.42].map((y) => (
+            <mesh key={y} position={[0, y, 0.141]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.009, 0.009, 0.006, 10]} />
+              <Shiny color={UNIFORM.silver} metal={0.8} />
             </mesh>
           ))}
-          <Arm side={1} raise={0.02} elbow={0.08} forward={0.02} swing={breathe * 0.03} />
-          <Arm side={-1} raise={0.02 + s * 1.35} elbow={0.08 + s * 2.3} forward={0.04 + s * 0.35} swing={-breathe * 0.03 * (1 - s)} />
-          {/* head */}
-          <group position={[0, TORSO + 0.28, 0]}>
-            <mesh castShadow>
-              <sphereGeometry args={[HEAD_R, 40, 40]} />
-              <Gloss color={UNIFORM.skin} rough={0.3} />
+          {/* chest pockets with flaps */}
+          {[1, -1].map((side) => (
+            <group key={side} position={[side * 0.1, TORSO * 0.68, 0.128]} rotation={[-0.12, 0, 0]}>
+              <mesh>
+                <boxGeometry args={[0.1, 0.11, 0.01]} />
+                <Cloth color={UNIFORM.khaki} />
+              </mesh>
+              <mesh position={[0, 0.045, 0.007]}>
+                <boxGeometry args={[0.105, 0.035, 0.008]} />
+                <Cloth color={UNIFORM.khakiShade} />
+              </mesh>
+            </group>
+          ))}
+          {/* name plate */}
+          <mesh position={[0.1, TORSO * 0.82, 0.14]}>
+            <boxGeometry args={[0.085, 0.022, 0.006]} />
+            <Shiny color="#111" />
+          </mesh>
+          {/* collar */}
+          {[1, -1].map((side) => (
+            <mesh key={side} position={[side * 0.045, TORSO + 0.06, 0.07]} rotation={[0.5, 0, side * 0.6]}>
+              <boxGeometry args={[0.07, 0.045, 0.012]} />
+              <Cloth color={UNIFORM.khakiShade} />
             </mesh>
-            {/* cap */}
-            <group position={[0, HEAD_R * 0.62, 0]} rotation={[-0.08, 0, 0]}>
+          ))}
+          {/* epaulettes */}
+          {[1, -1].map((side) => (
+            <mesh key={side} position={[side * (SHOULDER_X - 0.07), TORSO + 0.065, 0]} rotation={[0, 0, side * -0.15]}>
+              <boxGeometry args={[0.15, 0.022, 0.085]} />
+              <Cloth color={UNIFORM.khakiShade} />
+            </mesh>
+          ))}
+          {/* lanyard over left shoulder */}
+          <mesh position={[0.16, TORSO * 0.7, 0.05]} rotation={[0.2, 0.3, 0.35]}>
+            <torusGeometry args={[0.12, 0.009, 6, 30, Math.PI * 1.1]} />
+            <meshStandardMaterial color={UNIFORM.lanyard} roughness={0.7} />
+          </mesh>
+          {/* belt, buckle, holster */}
+          <mesh position={[0, 0.07, 0]} scale={[1, 1, 0.7]}>
+            <cylinderGeometry args={[0.188, 0.188, 0.06, 32]} />
+            <Shiny color={UNIFORM.belt} rough={0.35} />
+          </mesh>
+          <mesh position={[0, 0.07, 0.135]}>
+            <boxGeometry args={[0.08, 0.055, 0.012]} />
+            <Shiny color={UNIFORM.silver} metal={0.9} rough={0.2} />
+          </mesh>
+          <mesh position={[-0.2, -0.03, 0.02]} rotation={[0, 0, 0.08]} castShadow>
+            <boxGeometry args={[0.06, 0.17, 0.09]} />
+            <Shiny color={UNIFORM.belt} rough={0.35} />
+          </mesh>
+
+          <Arm side={1} raise={0.02} elbow={0.06} forward={0.03} watch />
+          <Arm side={-1} raise={0.02 + s * 1.4} elbow={0.06 + s * 2.45} forward={0.04 + s * 0.35} />
+
+          {/* neck + head */}
+          <mesh position={[0, TORSO + 0.08, 0]}>
+            <cylinderGeometry args={[0.055, 0.06, NECK, 18]} />
+            <Skin />
+          </mesh>
+          <group position={[0, TORSO + 0.08 + NECK / 2 + HEAD_R * 0.92 * HEAD_SCALE, 0.01]} scale={HEAD_SCALE}>
+            <mesh scale={[0.93, 1.1, 1]} castShadow>
+              <sphereGeometry args={[HEAD_R, 40, 32]} />
+              <Skin />
+            </mesh>
+            {/* jaw */}
+            <mesh position={[0, -0.06, 0.02]} scale={[0.9, 0.7, 0.9]}>
+              <sphereGeometry args={[HEAD_R * 0.8, 28, 20]} />
+              <Skin />
+            </mesh>
+            {/* hair at sides/back, under the cap */}
+            <mesh position={[0, 0.03, -0.012]} scale={[0.97, 1.0, 1.02]}>
+              <sphereGeometry args={[HEAD_R * 1.0, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.45]} />
+              <meshStandardMaterial color={UNIFORM.hair} roughness={0.9} />
+            </mesh>
+            <group scale={[0.93, 1.1, 1]}>
+              <Face blink={blink} smile={smile} brows={brows} look={look} />
+            </group>
+            {/* peaked cap */}
+            <group position={[0, HEAD_R * 0.9, -0.005]} rotation={[-0.06, 0, 0]}>
               <mesh castShadow>
-                <cylinderGeometry args={[HEAD_R * 1.08, HEAD_R * 1.0, 0.13, 40]} />
-                <Gloss color={UNIFORM.khaki} />
+                <cylinderGeometry args={[HEAD_R * 1.2, HEAD_R * 0.98, 0.1, 40]} />
+                <Cloth color={UNIFORM.khaki} />
               </mesh>
-              <mesh position={[0, -0.045, 0]}>
-                <cylinderGeometry args={[HEAD_R * 1.03, HEAD_R * 1.03, 0.04, 40]} />
-                <Gloss color={UNIFORM.belt} rough={0.3} />
+              <mesh position={[0, 0.05, 0]}>
+                <cylinderGeometry args={[HEAD_R * 1.2, HEAD_R * 1.2, 0.012, 40]} />
+                <Cloth color={UNIFORM.khakiShade} />
               </mesh>
-              {/* visor */}
-              <mesh position={[0, -0.06, HEAD_R * 0.75]} rotation={[0.25, 0, 0]} scale={[1, 0.18, 0.75]}>
-                <sphereGeometry args={[HEAD_R * 0.75, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-                <Gloss color="#1a1410" rough={0.15} />
+              <mesh position={[0, -0.032, 0]}>
+                <cylinderGeometry args={[HEAD_R * 1.0, HEAD_R * 1.0, 0.035, 40]} />
+                <Shiny color="#3b2414" rough={0.3} />
               </mesh>
-              {/* badge */}
-              <mesh position={[0, 0.0, HEAD_R * 1.05]}>
-                <cylinderGeometry args={[0.035, 0.035, 0.015, 20]} />
-                <Gloss color={UNIFORM.gold} rough={0.2} metal={0.9} />
+              <mesh position={[0, -0.05, HEAD_R * 0.78]} rotation={[0.32, 0, 0]} scale={[1, 0.15, 0.7]}>
+                <sphereGeometry args={[HEAD_R * 0.85, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                <Shiny color="#0d0a08" rough={0.12} />
+              </mesh>
+              <mesh position={[0, -0.005, HEAD_R * 1.0]} rotation={[Math.PI / 2 - 0.1, 0, 0]}>
+                <cylinderGeometry args={[0.024, 0.024, 0.012, 20]} />
+                <Shiny color={UNIFORM.gold} metal={0.9} rough={0.2} />
               </mesh>
             </group>
           </group>
@@ -155,4 +330,4 @@ export const Officer: React.FC<Props> = ({ position, rotationY = 0, salute = 0, 
   );
 };
 
-export const OFFICER_HEIGHT = PELVIS_Y + TORSO + 0.28 + HEAD_R + 0.15;
+export const OFFICER_HEIGHT = PELVIS_Y + TORSO + 0.08 + NECK + HEAD_R * 2 * HEAD_SCALE + 0.14;
